@@ -1,0 +1,256 @@
+﻿using BlackRise.Identity.Application.Contracts;
+using BlackRise.Identity.Application.DataTransferObject;
+using BlackRise.Identity.Application.Exceptions;
+using BlackRise.Identity.Domain;
+using BlackRise.Identity.Domain.Common.Enums;
+using BlackRise.Identity.Persistence.Settings;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+
+namespace BlackRise.Identity.Persistence.Services;
+
+public class AuthService : IAuthService
+{
+    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly SignInManager<ApplicationUser> _signInManager;
+    private readonly RoleManager<ApplicationRole> _roleManager;
+    private readonly JwtSetting _jwtSettings;
+    private readonly ClientUrlSetting _clientUrlSettings;
+    private readonly IHttpWrapper _httpWrapper;
+    public AuthService(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager,
+        RoleManager<ApplicationRole> roleManager,
+        IOptions<JwtSetting> jwtSettings,
+        IOptions<ClientUrlSetting> clientUrlSettings, IHttpWrapper httpWrapper)
+    {
+        _userManager = userManager;
+        _signInManager = signInManager;
+        _roleManager = roleManager;
+        _clientUrlSettings = clientUrlSettings.Value;
+        _httpWrapper = httpWrapper;
+        _jwtSettings = jwtSettings.Value;
+
+    }
+
+    public async Task<string> LoginAsync(string username, string password)
+    {
+        try
+        {
+            var user = await _userManager.FindByEmailAsync(username);
+
+            if (user == null || user.IsDeleted)
+                throw new BadRequestException("Invalid email/password");
+
+            if(!user.IsActive)
+                throw new BadRequestException("User account disabled");
+
+            var result = await _signInManager.PasswordSignInAsync(username, password, false, false);
+
+            if (result.IsNotAllowed)
+                throw new BadRequestException($"email not confirm");
+
+            if (!result.Succeeded)
+                throw new BadRequestException($"invalid username/password");
+
+            string token = await GenerateTokenAsync(user);
+
+            return token;
+        }
+        catch (Exception)
+        {
+            throw;
+        }
+    }
+
+    public async Task<string> RegisterAsync(string username, string password)
+    {
+        try
+        {
+            var existingUser = await _userManager.FindByEmailAsync(username);
+
+            if (existingUser != null)
+                throw new BadRequestException("User already exists");
+
+            var newUser = new ApplicationUser 
+            { 
+                UserName = username,
+                NormalizedUserName = username.ToUpper(),
+                Email = username, 
+                NormalizedEmail = username.ToUpper(),
+                CreatedDate = DateTime.UtcNow,
+                ModifiedDate = DateTime.UtcNow,
+                IsDeleted = false,
+                IsActive = true,
+                EmailConfirmed = false,
+            };
+            newUser.CreatedBy = newUser.Id;
+            newUser.ModifiedBy = newUser.Id;
+
+            var result = await _userManager.CreateAsync(newUser, password);
+
+            if (!result.Succeeded)
+                throw new BadRequestException($"Error while creating user {result.Errors.First().Description}");
+
+            _ = await _userManager.AddToRoleAsync(newUser, Role.User.ToString());
+
+            await SendEmailConfirmationAsync(newUser);
+
+            return "Success";
+        }
+        catch (Exception)
+        {
+            throw;
+        }
+    }
+
+    public async Task<string> EmailConfirmationAsync(string email, string token)
+    {
+        try
+        {
+            var existingUser = await _userManager.FindByEmailAsync(email);
+
+            if (existingUser == null)
+                throw new BadRequestException("Invalid user email");
+
+            var result = await _userManager.ConfirmEmailAsync(existingUser, token);
+
+            if (!result.Succeeded)
+                throw new BadRequestException($"Error while confirm user email {result.Errors.First().Description}");
+
+            return "Success";
+        }
+        catch (Exception)
+        {
+            throw;
+        }
+    }
+
+    public async Task<string> ForgotPasswordAsync(string email)
+    {
+        try
+        {
+            var existingUser = await _userManager.FindByEmailAsync(email);
+
+            if (existingUser == null || existingUser.IsDeleted)
+                throw new BadRequestException("Invalid user email");
+
+            if (!existingUser.IsActive)
+                throw new UnAuthorizedException($"user account disabled");
+
+            await SendPasswordResetEmailAsync(existingUser);
+
+            return "Success";
+        }
+        catch (Exception)
+        {
+            throw;
+        }
+    }
+
+    public async Task<string> ResetPasswordAsync(string email, string password, string token)
+    {
+        try
+        {
+            var existingUser = await _userManager.FindByEmailAsync(email);
+
+            if (existingUser == null || existingUser.IsDeleted)
+                throw new BadRequestException("Invalid user email");
+
+            var resetPasswordResult = await _userManager.ResetPasswordAsync(existingUser, token, password);
+
+            if (!resetPasswordResult.Succeeded)
+              throw new BadRequestException(resetPasswordResult.Errors.First().Description);
+
+            return "Success";
+        }
+        catch (Exception)
+        {
+            throw;
+        }
+    }
+
+    private async Task<string> GenerateTokenAsync(ApplicationUser user)
+    {
+        IList<Claim> userClaims = await _userManager.GetClaimsAsync(user);
+        IList<string> roles = await _userManager.GetRolesAsync(user);
+
+        List<Claim> roleClaims = roles.Select(role => new Claim(ClaimTypes.Role, role)).ToList();
+
+        var claims = new List<Claim>()
+        {
+            new(ClaimTypes.Email, user.Email ?? ""),
+            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+        };
+
+        claims.AddRange(userClaims);
+        claims.AddRange(roleClaims);
+
+        var userRole = await _roleManager.FindByNameAsync(roles[0]);
+
+        if(userRole != null)
+        {
+            var roleClaim = await _roleManager.GetClaimsAsync(userRole);
+            claims.AddRange(roleClaim);
+        }
+
+        return GenerateToken(claims);
+    }
+
+    private string GenerateToken(IEnumerable<Claim> claims)
+    {
+        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Key));
+        var signinCredentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+        var expireTime = DateTime.UtcNow.AddMinutes(_jwtSettings.DurationInMinutes);
+        var tokenOptions = new JwtSecurityToken(
+            issuer: _jwtSettings.Issuer,
+            audience: _jwtSettings.Audience,
+            claims: claims,
+            expires: expireTime,
+            signingCredentials: signinCredentials
+        );
+
+        var tokenString = new JwtSecurityTokenHandler().WriteToken(tokenOptions);
+        return tokenString;
+    }
+
+    private async Task<BaseResponseDto> SendEmailConfirmationAsync(ApplicationUser applicationUser)
+    {
+        var token = await _userManager.GenerateEmailConfirmationTokenAsync(applicationUser);
+        var emailConfirmationLink = string.Concat(_clientUrlSettings.EmailConfirmation, "?token=", token, "&email=", applicationUser.Email);
+        var senderUrl = string.Concat(_clientUrlSettings.SenderUrl, "/api/email-sender/send-email");
+        var messageBody = $"<p> Hi </p> <br /><br /> <p>below is the email confirmation link. <br /><br /> <a href='{emailConfirmationLink}'> confirm email </a> <br /><br /> <p>Thanks</p> </p>";
+
+        var reqBody = new
+        {
+            email = applicationUser.Email,
+            subject = "Email Confirmation",
+            body = messageBody
+        };
+
+        var result = await _httpWrapper.PostAsync<object, BaseResponseDto>(senderUrl, reqBody);
+
+        return result;
+    }
+
+    private async Task<BaseResponseDto> SendPasswordResetEmailAsync(ApplicationUser applicationUser)
+    {
+        var token = await _userManager.GeneratePasswordResetTokenAsync(applicationUser);
+        var passwordResetLink = string.Concat(_clientUrlSettings.ResetPassword, "?token=", token, "&email=", applicationUser.Email);
+        var senderUrl = string.Concat(_clientUrlSettings.SenderUrl, "/api/email-sender/send-email");
+        var messageBody = $"<p> Hi </p> <br /><br /> <p>below is the password reset link. <br /><br /> <a href='{passwordResetLink}'> Reset Password </a> <br /><br /> <p>Thanks</p> </p>";
+
+        var reqBody = new
+        {
+            email = applicationUser.Email,
+            subject = "Password Reset",
+            body = messageBody
+        };
+
+        var result = await _httpWrapper.PostAsync<object, BaseResponseDto>(senderUrl, reqBody);
+
+        return result;
+    }
+}
