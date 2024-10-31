@@ -122,7 +122,7 @@ public class AuthService : IAuthService
 
             return "Success";
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             throw;
         }
@@ -218,21 +218,29 @@ public class AuthService : IAuthService
 
     private async Task<BaseResponseDto> SendEmailConfirmationAsync(ApplicationUser applicationUser)
     {
-        var token = await _userManager.GenerateEmailConfirmationTokenAsync(applicationUser);
-        var emailConfirmationLink = string.Concat(_clientUrlSettings.EmailConfirmation, "?token=", token, "&email=", applicationUser.Email);
-        var senderUrl = string.Concat(_clientUrlSettings.SenderUrl, "/api/email-sender/send-email");
-        var messageBody = $"<p> Hi </p> <br /><br /> <p>below is the email confirmation link. <br /><br /> <a href='{emailConfirmationLink}'> confirm email </a> <br /><br /> <p>Thanks</p> </p>";
-
-        var reqBody = new
+        try
         {
-            email = applicationUser.Email,
-            subject = "Email Confirmation",
-            body = messageBody
-        };
+            var token = await _userManager.GenerateEmailConfirmationTokenAsync(applicationUser);
+            var emailConfirmationLink = string.Concat(_clientUrlSettings.EmailConfirmation, "?token=", token, "&email=", applicationUser.Email);
+            var senderUrl = string.Concat(_clientUrlSettings.SenderUrl, "/api/email-sender/send-email");
+            var messageBody = $"<p> Hi </p> <br /><br /> <p>below is the email confirmation link. <br /><br /> <a href='{emailConfirmationLink}'> confirm email </a> <br /><br /> <p>Thanks</p> </p>";
 
-        var result = await _httpWrapper.PostAsync<object, BaseResponseDto>(senderUrl, reqBody);
+            var reqBody = new
+            {
+                email = applicationUser.Email,
+                subject = "Email Confirmation",
+                body = messageBody
+            };
 
-        return result;
+            var result = await _httpWrapper.PostAsync<object, BaseResponseDto>(senderUrl, reqBody);
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            throw;
+        }
+        
     }
 
     private async Task<BaseResponseDto> SendPasswordResetEmailAsync(ApplicationUser applicationUser)

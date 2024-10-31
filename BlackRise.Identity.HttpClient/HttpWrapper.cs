@@ -24,11 +24,19 @@ public class HttpWrapper : IHttpWrapper
 
     public async Task<TResponse> PostAsync<TRequest, TResponse>(string url, TRequest requestData)
     {
-        var content = new StringContent(JsonSerializer.Serialize(requestData), Encoding.UTF8, "application/json");
-        var response = await _httpClient.PostAsync(url, content);
-        response.EnsureSuccessStatusCode();
-        var responseContent = await response.Content.ReadAsStringAsync();
-        return JsonSerializer.Deserialize<TResponse>(responseContent);
+        try
+        {
+            var content = new StringContent(JsonSerializer.Serialize(requestData), Encoding.UTF8, "application/json");
+            var response = await _httpClient.PostAsync(url, content);
+            response.EnsureSuccessStatusCode();
+            var responseContent = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<TResponse>(responseContent);
+        }
+        catch (Exception ex)
+        {
+            throw;
+        }
+        
     }
 
     public async Task<TResponse> PutAsync<TRequest, TResponse>(string url, TRequest requestData)

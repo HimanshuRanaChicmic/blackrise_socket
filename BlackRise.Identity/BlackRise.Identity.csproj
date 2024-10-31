@@ -22,4 +22,10 @@
     <ProjectReference Include="..\BlackRise.Identity.Persistence\BlackRise.Identity.Persistence.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Dockerfile">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
