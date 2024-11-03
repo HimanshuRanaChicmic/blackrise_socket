@@ -13,7 +13,7 @@ public class EmailConfirmationCommandHandler : IRequestHandler<EmailConfirmation
 
     public async Task<EmailConfirmationDto> Handle(EmailConfirmationCommand request, CancellationToken cancellationToken)
     {
-        var emailConfirmationResult = await _authService.EmailConfirmationAsync(request.Email, request.Token);
+        var emailConfirmationResult = await _authService.EmailConfirmationAsync(request.Email, request.Code);
 
         return new EmailConfirmationDto(emailConfirmationResult);
     }

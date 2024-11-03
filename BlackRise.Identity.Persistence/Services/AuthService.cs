@@ -96,7 +96,7 @@ public class AuthService : IAuthService
 
             _ = await _userManager.AddToRoleAsync(newUser, Role.User.ToString());
 
-            await SendEmailConfirmationAsync(newUser);
+            await SendEmailConfirmationCodeAsync(newUser);
 
             return "Success";
         }
@@ -106,7 +106,7 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task<string> EmailConfirmationAsync(string email, string token)
+    public async Task<string> EmailConfirmationAsync(string email, string code)
     {
         try
         {
@@ -115,7 +115,16 @@ public class AuthService : IAuthService
             if (existingUser == null)
                 throw new BadRequestException("Invalid user email");
 
-            var result = await _userManager.ConfirmEmailAsync(existingUser, token);
+            if (existingUser.EmailConfirmationCode != code)
+                throw new BadRequestException("Invalid code");
+
+            if (existingUser.EmailConfirmationCodeExpiry < DateTime.UtcNow)
+                throw new BadRequestException("Code has expired");
+
+            existingUser.EmailConfirmed = true;
+            existingUser.EmailConfirmationCode = null;
+            existingUser.EmailConfirmationCodeExpiry = null;
+            var result = await _userManager.UpdateAsync(existingUser);
 
             if (!result.Succeeded)
                 throw new BadRequestException($"Error while confirm user email {result.Errors.First().Description}");
@@ -216,19 +225,20 @@ public class AuthService : IAuthService
         return tokenString;
     }
 
-    private async Task<BaseResponseDto> SendEmailConfirmationAsync(ApplicationUser applicationUser)
+    private async Task<BaseResponseDto> SendEmailConfirmationCodeAsync(ApplicationUser applicationUser)
     {
         try
         {
-            var token = await _userManager.GenerateEmailConfirmationTokenAsync(applicationUser);
-            var emailConfirmationLink = string.Concat(_clientUrlSettings.EmailConfirmation, "?token=", token, "&email=", applicationUser.Email);
+            var code = await GenerateEmailConfirmationCodeAsync(applicationUser);
+
+            var messageBody = $"<p> Hi </p> <br /><br /> <p> Your confirmation code is {code}. It will expire in 2 minutes.";
+
             var senderUrl = string.Concat(_clientUrlSettings.SenderUrl, "/api/email-sender/send-email");
-            var messageBody = $"<p> Hi </p> <br /><br /> <p>below is the email confirmation link. <br /><br /> <a href='{emailConfirmationLink}'> confirm email </a> <br /><br /> <p>Thanks</p> </p>";
 
             var reqBody = new
             {
                 email = applicationUser.Email,
-                subject = "Email Confirmation",
+                subject = "Email Confirmation Code",
                 body = messageBody
             };
 
@@ -240,7 +250,16 @@ public class AuthService : IAuthService
         {
             throw;
         }
-        
+
+    }
+
+    public async Task<string> GenerateEmailConfirmationCodeAsync(ApplicationUser user)
+    {
+        var code = new Random().Next(100000, 999999).ToString();
+        user.EmailConfirmationCode = code;
+        user.EmailConfirmationCodeExpiry = DateTime.UtcNow.AddMinutes(2);
+        await _userManager.UpdateAsync(user);
+        return code;
     }
 
     private async Task<BaseResponseDto> SendPasswordResetEmailAsync(ApplicationUser applicationUser)
