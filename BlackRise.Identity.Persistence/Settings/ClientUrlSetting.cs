@@ -6,6 +6,7 @@ public class ClientUrlSetting
     public string ResetPassword { get; set; }
     public string Login { get; set; }
     public string SenderUrl { get; set; }
+    public string ProfileUrl { get; set; }
     public string EmailConfirmationTokenExpire { get; set; }
     public string ResetPasswordTokenExpire { get; set; }
 }

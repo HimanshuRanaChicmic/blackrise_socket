@@ -8,6 +8,8 @@ using BlackRise.Identity.Application.Feature.ResetPassword;
 using BlackRise.Identity.Application.Feature.ResetPassword.Commands;
 using BlackRise.Identity.Application.Feature.Signup;
 using BlackRise.Identity.Application.Feature.Signup.Commands;
+using BlackRise.Identity.Application.Feature.VerifyResetPasswordCode;
+using BlackRise.Identity.Application.Feature.VerifyResetPasswordCode.Commands;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -45,6 +47,12 @@ namespace BlackRise.Identity.Controllers
         public async Task<ActionResult<EmailConfirmationDto>> ConfirmEmail([FromBody] EmailConfirmationCommand emailConfirmationCommand)
         {
             return await _mediator.Send(emailConfirmationCommand);
+        }
+
+        [HttpPost("verify-reset-code")]
+        public async Task<ActionResult<VerifyResetPasswordCodeDto>> VerifyResetPasswordCode([FromBody] VerifyResetPasswordCodeCommand verifyResetPasswordCodeCommand)
+        {
+            return await _mediator.Send(verifyResetPasswordCodeCommand);
         }
 
         [HttpPost("reset")]

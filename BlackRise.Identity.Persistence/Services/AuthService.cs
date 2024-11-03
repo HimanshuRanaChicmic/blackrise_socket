@@ -129,12 +129,27 @@ public class AuthService : IAuthService
             if (!result.Succeeded)
                 throw new BadRequestException($"Error while confirm user email {result.Errors.First().Description}");
 
+            await CreateProfileAsync(existingUser);
+
             return "Success";
         }
         catch (Exception ex)
         {
             throw;
         }
+    }
+
+    private async Task CreateProfileAsync(ApplicationUser existingUser)
+    {
+        var profileUrl = string.Concat(_clientUrlSettings.ProfileUrl, "/api/profiles/create-profile");
+
+        var profileObj = new
+        {
+            existingUser.Id,
+            existingUser.Email
+        };
+
+        await _httpWrapper.PostAsync<object, object>(profileUrl, profileObj);
     }
 
     public async Task<string> ForgotPasswordAsync(string email)
@@ -159,7 +174,38 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task<string> ResetPasswordAsync(string email, string password, string token)
+    public async Task<string> ResetConfirmationAsync(string email, string code)
+    {
+        try
+        {
+            var existingUser = await _userManager.FindByEmailAsync(email);
+
+            if (existingUser == null)
+                throw new BadRequestException("Invalid user email");
+
+            if (existingUser.ResetPasswordCode != code)
+                throw new BadRequestException("Invalid code");
+
+            if (existingUser.ResetPasswordCodeExpiry < DateTime.UtcNow)
+                throw new BadRequestException("Code has expired");
+
+            existingUser.ResetPasswordCode = null;
+            existingUser.ResetPasswordCodeExpiry = null;
+            var result = await _userManager.UpdateAsync(existingUser);
+
+            if (!result.Succeeded)
+                throw new BadRequestException($"Error while confirm user email {result.Errors.First().Description}");
+
+            return "Success";
+        }
+        catch (Exception ex)
+        {
+            throw;
+        }
+    }
+
+
+    public async Task<string> ResetPasswordAsync(string email, string password)
     {
         try
         {
@@ -167,6 +213,8 @@ public class AuthService : IAuthService
 
             if (existingUser == null || existingUser.IsDeleted)
                 throw new BadRequestException("Invalid user email");
+
+            var token = await _userManager.GeneratePasswordResetTokenAsync(existingUser);
 
             var resetPasswordResult = await _userManager.ResetPasswordAsync(existingUser, token, password);
 
@@ -192,6 +240,7 @@ public class AuthService : IAuthService
         {
             new(ClaimTypes.Email, user.Email ?? ""),
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new(ClaimTypes.Role, roles[0].ToString()),
         };
 
         claims.AddRange(userClaims);
@@ -262,17 +311,25 @@ public class AuthService : IAuthService
         return code;
     }
 
+    public async Task<string> GeneratePasswordResetCodeAsync(ApplicationUser user)
+    {
+        var code = new Random().Next(100000, 999999).ToString();
+        user.ResetPasswordCode = code;
+        user.ResetPasswordCodeExpiry = DateTime.UtcNow.AddMinutes(2);
+        await _userManager.UpdateAsync(user);
+        return code;
+    }
+
     private async Task<BaseResponseDto> SendPasswordResetEmailAsync(ApplicationUser applicationUser)
     {
-        var token = await _userManager.GeneratePasswordResetTokenAsync(applicationUser);
-        var passwordResetLink = string.Concat(_clientUrlSettings.ResetPassword, "?token=", token, "&email=", applicationUser.Email);
+        var code = await GeneratePasswordResetCodeAsync(applicationUser);
         var senderUrl = string.Concat(_clientUrlSettings.SenderUrl, "/api/email-sender/send-email");
-        var messageBody = $"<p> Hi </p> <br /><br /> <p>below is the password reset link. <br /><br /> <a href='{passwordResetLink}'> Reset Password </a> <br /><br /> <p>Thanks</p> </p>";
+        var messageBody = $"<p> Hi </p> <br /><br /> <p>below is the password reset code. <br /><br /> {code} <br /><br /> <p>Thanks</p> </p>";
 
         var reqBody = new
         {
             email = applicationUser.Email,
-            subject = "Password Reset",
+            subject = "Password Reset Code",
             body = messageBody
         };
 
