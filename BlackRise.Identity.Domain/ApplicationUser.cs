@@ -6,6 +6,10 @@ public class ApplicationUser : IdentityUser<Guid>
 {
     public string? EmailConfirmationCode { get; set; }
     public DateTime? EmailConfirmationCodeExpiry { get; set; }
+
+    public string? ResetPasswordCode { get; set; }
+    public DateTime? ResetPasswordCodeExpiry { get; set; }
+
     public Guid CreatedBy { get; set; }
     public DateTime CreatedDate { get; set; }
     public Guid ModifiedBy { get; set; }
