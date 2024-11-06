@@ -24,6 +24,11 @@ namespace BlackRise.Identity.Controllers
         {
             _mediator = mediator;
         }
+        [HttpPost("verifycicd")]
+        public async Task<ActionResult<LoginDto>> verifycicd([FromBody] LoginCommand loginCommand)
+        {
+            return await _mediator.Send(loginCommand);
+        }
 
         [HttpPost("login")]
         public async Task<ActionResult<LoginDto>> Login([FromBody] LoginCommand loginCommand)
