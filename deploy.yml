@@ -1,0 +1,48 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main  # Trigger on push to main branch (you can change this to any branch)
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest  # Use the latest Ubuntu runner for GitHub Actions
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      # Step 2: Set up SSH using the secret key
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.EC2_KEY }}  # Use your secret key from GitHub Secrets
+
+      # Step 3: Set up .NET SDK 8.0
+      - name: Set up .NET SDK 8.0
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0'  # Use .NET 8.0 (adjust if you need a different version)
+
+      # Step 4: Restore dependencies and build the .NET application
+      - name: Build and publish the application
+        run: |
+          dotnet restore  # Restore dependencies
+          dotnet build    # Build the application
+          dotnet publish --configuration Release --output ./publish  # Publish to the output folder
+
+      # Step 5: Copy files to EC2
+      - name: Copy files to EC2
+        run: |
+          scp -i /tmp/ssh-key -o StrictHostKeyChecking=no -r ./publish/* ubuntu@13.40.60.211:/path/to/target/directory  # Adjust path
+
+      # Step 6: SSH into EC2 and deploy
+      - name: SSH into EC2 and deploy
+        run: |
+          ssh -i /tmp/ssh-key -o StrictHostKeyChecking=no ubuntu@13.40.60.211 << 'EOF'
+          # Run the commands to deploy the application
+          cd /path/to/target/directory  # Navigate to the app directory
+          sudo systemctl restart your_service_name  # Restart your service if applicable
+          EOF
