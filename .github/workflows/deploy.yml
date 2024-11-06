@@ -33,16 +33,18 @@ jobs:
           dotnet build    # Build the application
           dotnet publish --configuration Release --output ./publish  # Publish to the output folder
 
-      # Step 5: Copy files to EC2
+      # Step 5: Copy files to EC2 (Targeting the IdentityService directory)
       - name: Copy files to EC2
         run: |
-          scp -i /tmp/ssh-key -o StrictHostKeyChecking=no -r ./publish/* ubuntu@13.40.60.211:/path/to/target/directory  # Adjust path
+          scp -o StrictHostKeyChecking=no -r ./publish/* ubuntu@13.40.60.211:/home/ubuntu/IdentityService  # Replace with your full directory path if necessary
 
       # Step 6: SSH into EC2 and deploy
       - name: SSH into EC2 and deploy
         run: |
-          ssh -i /tmp/ssh-key -o StrictHostKeyChecking=no ubuntu@13.40.60.211 << 'EOF'
-          # Run the commands to deploy the application
-          cd /path/to/target/directory  # Navigate to the app directory
-          sudo systemctl restart your_service_name  # Restart your service if applicable
+          ssh -o StrictHostKeyChecking=no ubuntu@13.40.60.211 << 'EOF'
+          # Create the directory if it doesn't exist
+          mkdir -p /home/ubuntu/IdentityService
+          # Navigate to the directory and restart the service
+          cd /home/ubuntu/IdentityService
+          sudo systemctl restart your_service_name  # Replace with your actual service name if applicable
           EOF
