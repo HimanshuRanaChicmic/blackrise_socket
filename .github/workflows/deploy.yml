@@ -46,5 +46,5 @@ jobs:
           mkdir -p /home/ubuntu/IdentityService
           # Navigate to the directory and restart the service
           cd /home/ubuntu/IdentityService
-          sudo systemctl restart your_service_name  # Replace with your actual service name if applicable
+          sudo systemctl restart identityservice.service  # Replace with your actual service name if applicable
           EOF
