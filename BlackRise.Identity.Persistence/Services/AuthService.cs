@@ -1,6 +1,7 @@
 ﻿using BlackRise.Identity.Application.Contracts;
 using BlackRise.Identity.Application.DataTransferObject;
 using BlackRise.Identity.Application.Exceptions;
+using BlackRise.Identity.Application.Feature.Signup.Commands;
 using BlackRise.Identity.Domain;
 using BlackRise.Identity.Domain.Common.Enums;
 using BlackRise.Identity.Persistence.Settings;
@@ -106,6 +107,74 @@ public class AuthService : IAuthService
         }
     }
 
+    public async Task<string> RegisterAsync(SignupCommand signupCommand)
+    {
+        try
+        {
+            var existingUser = await _userManager.FindByEmailAsync(signupCommand.Email);
+
+            if (existingUser != null)
+                throw new BadRequestException("User already exists");
+
+            var newUser = new ApplicationUser
+            {
+                UserName = signupCommand.Email,
+                NormalizedUserName = signupCommand.Email.ToUpper(),
+                Email = signupCommand.Email,
+                NormalizedEmail = signupCommand.Email.ToUpper(),
+                CreatedDate = DateTime.UtcNow,
+                ModifiedDate = DateTime.UtcNow,
+                IsDeleted = false,
+                IsActive = true,
+                EmailConfirmed = false,
+            };
+            newUser.CreatedBy = newUser.Id;
+            newUser.ModifiedBy = newUser.Id;
+
+            var result = await _userManager.CreateAsync(newUser, "Temp@13221212");
+
+            if (!result.Succeeded)
+                throw new BadRequestException($"Error while creating user {result.Errors.First().Description}");
+
+            _ = await _userManager.AddToRoleAsync(newUser, Role.User.ToString());
+
+            await SendEmailConfirmationCodeAsync(newUser);
+            await CreateProfileAsync(newUser, signupCommand);
+
+            return "Success";
+        }
+        catch (Exception)
+        {
+            throw;
+        }
+    }
+
+    public async Task<Tuple<Guid, string>> UpdateUserPasswordAsync(string email, string password)
+    {
+        try
+        {
+            var existingUser = await _userManager.FindByEmailAsync(email);
+
+            if (existingUser == null)
+                throw new BadRequestException("Invalid user");
+
+            PasswordHasher<ApplicationUser> passwordHasher = new();
+
+            existingUser.PasswordHash = passwordHasher.HashPassword(existingUser, password);
+
+            var result = await _userManager.UpdateAsync(existingUser);
+
+            if (!result.Succeeded)
+                throw new BadRequestException($"Error while updating user password {result.Errors.First().Description}");
+
+            return new Tuple<Guid, string>(existingUser.Id,"Success");
+        }
+        catch (Exception)
+        {
+            throw;
+        }
+    }
+
     public async Task<string> EmailConfirmationAsync(string email, string code)
     {
         try
@@ -129,8 +198,6 @@ public class AuthService : IAuthService
             if (!result.Succeeded)
                 throw new BadRequestException($"Error while confirm user email {result.Errors.First().Description}");
 
-            await CreateProfileAsync(existingUser);
-
             return "Success";
         }
         catch (Exception ex)
@@ -139,14 +206,19 @@ public class AuthService : IAuthService
         }
     }
 
-    private async Task CreateProfileAsync(ApplicationUser existingUser)
+    private async Task CreateProfileAsync(ApplicationUser existingUser, SignupCommand signupCommand)
     {
         var profileUrl = string.Concat(_clientUrlSettings.ProfileUrl, "/api/profiles/create-profile");
 
         var profileObj = new
         {
             existingUser.Id,
-            existingUser.Email
+            signupCommand.FirstName,
+            signupCommand.LastName,
+            existingUser.Email,
+            signupCommand.DateOfBirth,
+            signupCommand.IsReceiveBlackRiseEmails,
+            signupCommand.IsReconnectWithEmail,
         };
 
         await _httpWrapper.PostAsync<object, object>(profileUrl, profileObj);

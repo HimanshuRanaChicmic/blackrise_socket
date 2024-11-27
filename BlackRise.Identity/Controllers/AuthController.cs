@@ -8,6 +8,8 @@ using BlackRise.Identity.Application.Feature.ResetPassword;
 using BlackRise.Identity.Application.Feature.ResetPassword.Commands;
 using BlackRise.Identity.Application.Feature.Signup;
 using BlackRise.Identity.Application.Feature.Signup.Commands;
+using BlackRise.Identity.Application.Feature.UpdatePassword;
+using BlackRise.Identity.Application.Feature.UpdatePassword.Commands;
 using BlackRise.Identity.Application.Feature.VerifyResetPasswordCode;
 using BlackRise.Identity.Application.Feature.VerifyResetPasswordCode.Commands;
 using MediatR;
@@ -23,11 +25,6 @@ namespace BlackRise.Identity.Controllers
         public AuthController(IMediator mediator)
         {
             _mediator = mediator;
-        }
-        [HttpPost("verifycicd")]
-        public async Task<ActionResult<LoginDto>> verifycicd([FromBody] LoginCommand loginCommand)
-        {
-            return await _mediator.Send(loginCommand);
         }
 
         [HttpPost("login")]
@@ -52,6 +49,12 @@ namespace BlackRise.Identity.Controllers
         public async Task<ActionResult<EmailConfirmationDto>> ConfirmEmail([FromBody] EmailConfirmationCommand emailConfirmationCommand)
         {
             return await _mediator.Send(emailConfirmationCommand);
+        }
+
+        [HttpPost("update-password")]
+        public async Task<ActionResult<UpdatePasswordDto>> UpdatePasword([FromBody] UpdatePasswordCommand updatePasswordCommand)
+        {
+            return await _mediator.Send(updatePasswordCommand);
         }
 
         [HttpPost("verify-reset-code")]
