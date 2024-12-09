@@ -13,7 +13,7 @@ public  class SignupCommandHandler : IRequestHandler<SignupCommand, SignupDto>
 
     public async Task<SignupDto> Handle(SignupCommand request, CancellationToken cancellationToken)
     {
-        var result = await _authService.RegisterAsync(request.Email, request.Password);
+        var result = await _authService.RegisterAsync(request);
         return new SignupDto(result);
     }
 }
