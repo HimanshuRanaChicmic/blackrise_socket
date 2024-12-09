@@ -28,13 +28,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlackRise.Identity.HttpClient", "BlackRise.Identity.HttpClient\BlackRise.Identity.HttpClient.csproj", "{E908BD7F-4D22-47BA-8DE7-45F44F559CC5}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{D411D362-5286-49A5-8F5F-BAFDE5E82F6E}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{DBF9793D-9534-47D8-AB39-736F74A43F2F}"
-	ProjectSection(SolutionItems) = preProject
-		deploy.yml = deploy.yml
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -74,8 +67,6 @@ Global
 		{CEF9CE1B-51FB-4808-8BBE-A33C11522E82} = {59D73042-38A3-4CF2-B94B-F2718A045F32}
 		{6FD1EB17-B6C6-4174-BE24-F762F7048F8D} = {1BC12F66-CC6E-4B8A-B2C3-E69D337C1C5C}
 		{E908BD7F-4D22-47BA-8DE7-45F44F559CC5} = {1BC12F66-CC6E-4B8A-B2C3-E69D337C1C5C}
-		{D411D362-5286-49A5-8F5F-BAFDE5E82F6E} = {3B41A948-0FA1-4F6F-A2A8-CA6E5ED5283E}
-		{DBF9793D-9534-47D8-AB39-736F74A43F2F} = {D411D362-5286-49A5-8F5F-BAFDE5E82F6E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E9CF88CA-0A64-4E6C-9A89-717F59E86A06}
