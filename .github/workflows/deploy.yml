@@ -36,7 +36,7 @@ jobs:
       # Step 5: Copy files to EC2 (Targeting the IdentityService directory)
       - name: Copy files to EC2
         run: |
-          scp -o StrictHostKeyChecking=no -r ./publish/* ubuntu@13.40.60.211:/home/ubuntu/IdentityService/IdentityService  # Replace with your full directory path if necessary
+          scp -o StrictHostKeyChecking=no -r ./publish/* ubuntu@18.171.53.71:/home/ubuntu/IdentityService/IdentityService  # Replace with your full directory path if necessary
 
       # Step 6: SSH into EC2 and deploy
       - name: SSH into EC2 and deploy
