@@ -41,7 +41,7 @@ jobs:
       # Step 6: SSH into EC2 and deploy
       - name: SSH into EC2 and deploy
         run: |
-          ssh -o StrictHostKeyChecking=no ubuntu@13.40.60.211 << 'EOF'
+          ssh -o StrictHostKeyChecking=no ubuntu@18.171.53.71 << 'EOF'
           # Create the directory if it doesn't exist
           mkdir -p /home/ubuntu/IdentityService
           # Navigate to the directory and restart the service
