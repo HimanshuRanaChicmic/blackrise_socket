@@ -143,7 +143,7 @@ public class AuthService : IAuthService
 
             return "Success";
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             throw;
         }
