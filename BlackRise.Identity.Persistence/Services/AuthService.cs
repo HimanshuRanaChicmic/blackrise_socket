@@ -113,7 +113,7 @@ public class AuthService : IAuthService
         {
             var existingUser = await _userManager.FindByEmailAsync(signupCommand.Email);
 
-            if (existingUser != null)
+            if (existingUser != null && existingUser.EmailConfirmed)
                 throw new BadRequestException("User already exists");
 
             var newUser = new ApplicationUser
@@ -131,15 +131,24 @@ public class AuthService : IAuthService
             newUser.CreatedBy = newUser.Id;
             newUser.ModifiedBy = newUser.Id;
 
-            var result = await _userManager.CreateAsync(newUser, "Temp@13221212");
+           
+            if (existingUser != null && !existingUser.EmailConfirmed)
+            {
+                newUser.Id = existingUser.Id;
+                await UpdateProfileAsync(newUser, signupCommand);
+            }
+            else
+            {
+                var result = await _userManager.CreateAsync(newUser, "Temp@13221212");
 
-            if (!result.Succeeded)
-                throw new BadRequestException($"Error while creating user {result.Errors.First().Description}");
+                if (!result.Succeeded)
+                    throw new BadRequestException($"Error while creating user {result.Errors.First().Description}");
 
-            _ = await _userManager.AddToRoleAsync(newUser, Role.User.ToString());
+                _ = await _userManager.AddToRoleAsync(newUser, Role.User.ToString());
+                await CreateProfileAsync(newUser, signupCommand);
+            }
 
             await SendEmailConfirmationCodeAsync(newUser);
-            await CreateProfileAsync(newUser, signupCommand);
 
             return "Success";
         }
@@ -222,6 +231,24 @@ public class AuthService : IAuthService
         };
 
         await _httpWrapper.PostAsync<object, object>(profileUrl, profileObj);
+    }
+
+    private async Task UpdateProfileAsync(ApplicationUser existingUser, SignupCommand signupCommand)
+    {
+        var profileUrl = string.Concat(_clientUrlSettings.ProfileUrl, "/api/profiles/update-profile");
+
+        var profileObj = new
+        {
+            existingUser.Id,
+            signupCommand.FirstName,
+            signupCommand.LastName,
+            existingUser.Email,
+            signupCommand.DateOfBirth,
+            signupCommand.IsReceiveBlackRiseEmails,
+            signupCommand.IsReconnectWithEmail,
+        };
+
+        //await _httpWrapper.PostAsync<object, object>(profileUrl, profileObj);
     }
 
     public async Task<string> ForgotPasswordAsync(string email)
