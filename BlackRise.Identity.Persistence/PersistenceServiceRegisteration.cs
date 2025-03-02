@@ -1,4 +1,5 @@
 ﻿using BlackRise.Identity.Application.Contracts;
+using BlackRise.Identity.Application.Settings;
 using BlackRise.Identity.Domain;
 using BlackRise.Identity.Persistence.CustomTokenProvider;
 using BlackRise.Identity.Persistence.Services;
@@ -22,6 +23,7 @@ public static class PersistenceServiceRegisteration
         services.Configure<ClientUrlSetting>(configuration.GetSection("ClientUrlSettings"));
         services.Configure<JwtSetting>(configuration.GetSection("JwtSettings"));
         services.Configure<EmailSetting>(configuration.GetSection("EmailSettings"));
+        services.Configure<LinkedInSetting>(configuration.GetSection("LinkedInSetting"));
 
         return services;
     }

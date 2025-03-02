@@ -1,6 +1,6 @@
 ﻿using MediatR;
 
-namespace BlackRise.Identity.Application.Feature.Login.Commands;
+namespace BlackRise.Identity.Application.Feature.Login.Commands.EmailPassword;
 
 public class LoginCommand : IRequest<LoginDto>
 {

@@ -1,12 +1,12 @@
-using BlackRise.Identity.Persistence;
 using BlackRise.Identity.Application;
-using BlackRise.Identity.Extensions;
-using BlackRise.Identity.Middleware;
-using FluentValidation.AspNetCore;
-using System.Text.Json.Serialization;
 using BlackRise.Identity.Application.DataTransferObject;
-using Microsoft.AspNetCore.Mvc;
+using BlackRise.Identity.Extensions;
 using BlackRise.Identity.HttpClient;
+using BlackRise.Identity.Middleware;
+using BlackRise.Identity.Persistence;
+using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Mvc;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 

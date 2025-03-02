@@ -2,6 +2,7 @@
 using BlackRise.Identity.Application.DataTransferObject;
 using BlackRise.Identity.Application.Exceptions;
 using BlackRise.Identity.Application.Feature.Signup.Commands;
+using BlackRise.Identity.Application.Settings;
 using BlackRise.Identity.Domain;
 using BlackRise.Identity.Domain.Common.Enums;
 using BlackRise.Identity.Persistence.Settings;
@@ -9,6 +10,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
 
@@ -21,11 +24,12 @@ public class AuthService : IAuthService
     private readonly RoleManager<ApplicationRole> _roleManager;
     private readonly JwtSetting _jwtSettings;
     private readonly ClientUrlSetting _clientUrlSettings;
+    private readonly LinkedInSetting _linkedInSetting;
     private readonly IHttpWrapper _httpWrapper;
     public AuthService(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager,
         RoleManager<ApplicationRole> roleManager,
         IOptions<JwtSetting> jwtSettings,
-        IOptions<ClientUrlSetting> clientUrlSettings, IHttpWrapper httpWrapper)
+        IOptions<ClientUrlSetting> clientUrlSettings, IHttpWrapper httpWrapper, IOptions<LinkedInSetting> linkedInSetting)
     {
         _userManager = userManager;
         _signInManager = signInManager;
@@ -33,7 +37,7 @@ public class AuthService : IAuthService
         _clientUrlSettings = clientUrlSettings.Value;
         _httpWrapper = httpWrapper;
         _jwtSettings = jwtSettings.Value;
-
+        _linkedInSetting = linkedInSetting.Value;
     }
 
     public async Task<string> LoginAsync(string username, string password)
@@ -379,7 +383,7 @@ public class AuthService : IAuthService
         {
             var code = await GenerateEmailConfirmationCodeAsync(applicationUser);
 
-            var messageBody = $"<p> Hi </p> <br /><br /> <p> Your confirmation code is {code}. It will expire in 2 minutes.";
+            var messageBody = $"<p> Hi </p> <br /><br /> <p> Your confirmation code is {code}. It will expire in 10 minutes.";
 
             var senderUrl = string.Concat(_clientUrlSettings.SenderUrl, "/api/email-sender/send-email");
 
@@ -405,7 +409,7 @@ public class AuthService : IAuthService
     {
         var code = new Random().Next(100000, 999999).ToString();
         user.EmailConfirmationCode = code;
-        user.EmailConfirmationCodeExpiry = DateTime.UtcNow.AddMinutes(2);
+        user.EmailConfirmationCodeExpiry = DateTime.UtcNow.AddMinutes(10);
         await _userManager.UpdateAsync(user);
         return code;
     }
@@ -436,4 +440,72 @@ public class AuthService : IAuthService
 
         return result;
     }
+
+    public async Task<string> LoginWithLinkedInAsync(string linkedInCode)
+    {
+        var linkedInToken = await GetLinkedInAccessTokenAsync(linkedInCode);
+
+        var linkedInUser = await GetLinkedInUserProfileAsync(linkedInToken);
+
+        var user = await _userManager.FindByEmailAsync(linkedInUser.Email);
+
+        if (user == null)
+        {
+            user = new ApplicationUser
+            {
+                UserName = linkedInUser.Email,
+                Email = linkedInUser.Email,
+                IsActive = true,
+                EmailConfirmed = true,
+                CreatedDate = DateTime.UtcNow,
+                ModifiedDate = DateTime.UtcNow
+            };
+
+            var result = await _userManager.CreateAsync(user);
+
+            if (!result.Succeeded)
+                throw new BadRequestException("Failed to create user with LinkedIn credentials.");
+
+            await _userManager.AddToRoleAsync(user, Role.User.ToString());
+        }
+
+        string token = await GenerateTokenAsync(user);
+        return token;
+    }
+    private async Task<string> GetLinkedInAccessTokenAsync(string code)
+    {
+        var values = new Dictionary<string, string>
+    {
+        { "grant_type", "authorization_code" },
+        { "code", code },
+        { "redirect_uri", _linkedInSetting.LinkedInRedirectUri },
+        { "client_id", _linkedInSetting.LinkedInClientId },
+        { "client_secret", _linkedInSetting.LinkedInClientSecret}
+    };
+
+        using var client = new HttpClient();
+        var content = new FormUrlEncodedContent(values);
+        var response = await client.PostAsync("https://www.linkedin.com/oauth/v2/accessToken", content);
+
+        if (!response.IsSuccessStatusCode)
+            throw new Exception("Failed to retrieve LinkedIn access token");
+
+        var result = await response.Content.ReadFromJsonAsync<LinkedInTokenResponse>();
+
+        return result.AccessToken;
+    }
+    private async Task<LinkedInUser> GetLinkedInUserProfileAsync(string accessToken)
+    {
+        using var client = new HttpClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        var response = await client.GetAsync("https://api.linkedin.com/v2/me?projection=(id,localizedFirstName,localizedLastName,emailAddress)");
+
+        if (!response.IsSuccessStatusCode)
+            throw new Exception("Failed to retrieve LinkedIn user profile");
+
+        return await response.Content.ReadFromJsonAsync<LinkedInUser>();
+    }
+
+
 }
