@@ -218,7 +218,7 @@ public class AuthService : IAuthService
             throw;
         }
     }
-    public async Task<string> ResentEmailConfirmationAsync(string email)
+    public async Task<string> ResendEmailConfirmationAsync(string email)
     {
         try
         {
@@ -236,6 +236,28 @@ public class AuthService : IAuthService
             throw;
         }
     }
+    public async Task<string> ResendResetPasswordCodeAsync(string email)
+    {
+        try
+        {
+            var existingUser = await _userManager.FindByEmailAsync(email);
+
+            if (existingUser == null || existingUser.IsDeleted)
+                throw new BadRequestException("Invalid user email");
+
+            if (!existingUser.IsActive)
+                throw new UnAuthorizedException($"user account disabled");
+
+            await SendPasswordResetEmailAsync(existingUser);
+
+            return "Success";
+        }
+        catch (Exception ex)
+        {
+            throw;
+        }
+    }
+
     private async Task CreateProfileAsync(ApplicationUser existingUser, SignupCommand signupCommand)
     {
         var profileUrl = string.Concat(_clientUrlSettings.ProfileUrl, "/api/profiles/create-profile");
@@ -435,7 +457,7 @@ public class AuthService : IAuthService
     {
         var code = new Random().Next(100000, 999999).ToString();
         user.ResetPasswordCode = code;
-        user.ResetPasswordCodeExpiry = DateTime.UtcNow.AddMinutes(2);
+        user.ResetPasswordCodeExpiry = DateTime.UtcNow.AddMinutes(10);
         await _userManager.UpdateAsync(user);
         return code;
     }

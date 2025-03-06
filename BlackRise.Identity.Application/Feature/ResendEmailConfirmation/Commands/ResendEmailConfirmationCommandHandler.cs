@@ -13,7 +13,7 @@ public class ResendEmailConfirmationCommandHandler : IRequestHandler<ResendEmail
 
     public async Task<ResendEmailConfirmationDto> Handle(ResendEmailConfirmationCommand request, CancellationToken cancellationToken)
     {
-        var emailConfirmationResult = await _authService.ResentEmailConfirmationAsync(request.Email);
+        var emailConfirmationResult = await _authService.ResendEmailConfirmationAsync(request.Email);
 
         return new ResendEmailConfirmationDto(emailConfirmationResult);
     }

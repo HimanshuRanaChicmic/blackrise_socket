@@ -8,6 +8,8 @@ using BlackRise.Identity.Application.Feature.Login.Commands.LinkedIn;
 using BlackRise.Identity.Application.Feature.Login.Queries.LinkedIn;
 using BlackRise.Identity.Application.Feature.ResendEmailConfirmation;
 using BlackRise.Identity.Application.Feature.ResendEmailConfirmation.Commands;
+using BlackRise.Identity.Application.Feature.ResendResetPassword;
+using BlackRise.Identity.Application.Feature.ResendResetPassword.Commands;
 using BlackRise.Identity.Application.Feature.ResetPassword;
 using BlackRise.Identity.Application.Feature.ResetPassword.Commands;
 using BlackRise.Identity.Application.Feature.Signup;
@@ -94,6 +96,13 @@ namespace BlackRise.Identity.Controllers
         {
             return await _mediator.Send(resendEmailConfirmationCommand);
         }
+
+        [HttpPost("resend-reset-password-code")]
+        public async Task<ActionResult<ResendResetPasswordDto>> ResendResetPasswordCode([FromBody] ResendResetPasswordCommand resendResetPasswordCommand)
+        {
+            return await _mediator.Send(resendResetPasswordCommand);
+        }
+
 
         [HttpPost("update-password")]
         public async Task<ActionResult<UpdatePasswordDto>> UpdatePasword([FromBody] UpdatePasswordCommand updatePasswordCommand)
