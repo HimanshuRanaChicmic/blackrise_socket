@@ -6,6 +6,8 @@ using BlackRise.Identity.Application.Feature.Login;
 using BlackRise.Identity.Application.Feature.Login.Commands.EmailPassword;
 using BlackRise.Identity.Application.Feature.Login.Commands.LinkedIn;
 using BlackRise.Identity.Application.Feature.Login.Queries.LinkedIn;
+using BlackRise.Identity.Application.Feature.ResendEmailConfirmation;
+using BlackRise.Identity.Application.Feature.ResendEmailConfirmation.Commands;
 using BlackRise.Identity.Application.Feature.ResetPassword;
 using BlackRise.Identity.Application.Feature.ResetPassword.Commands;
 using BlackRise.Identity.Application.Feature.Signup;
@@ -85,6 +87,12 @@ namespace BlackRise.Identity.Controllers
         public async Task<ActionResult<EmailConfirmationDto>> ConfirmEmail([FromBody] EmailConfirmationCommand emailConfirmationCommand)
         {
             return await _mediator.Send(emailConfirmationCommand);
+        }
+
+        [HttpPost("resend-email-confirmation")]
+        public async Task<ActionResult<ResendEmailConfirmationDto>> ResendConfirmEmail([FromBody] ResendEmailConfirmationCommand resendEmailConfirmationCommand)
+        {
+            return await _mediator.Send(resendEmailConfirmationCommand);
         }
 
         [HttpPost("update-password")]

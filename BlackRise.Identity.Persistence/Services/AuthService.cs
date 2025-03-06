@@ -218,7 +218,24 @@ public class AuthService : IAuthService
             throw;
         }
     }
+    public async Task<string> ResentEmailConfirmationAsync(string email)
+    {
+        try
+        {
+            var existingUser = await _userManager.FindByEmailAsync(email);
 
+            if (existingUser == null)
+                throw new BadRequestException("Invalid user email");
+
+            await SendEmailConfirmationCodeAsync(existingUser);
+
+            return "Success";
+        }
+        catch (Exception ex)
+        {
+            throw;
+        }
+    }
     private async Task CreateProfileAsync(ApplicationUser existingUser, SignupCommand signupCommand)
     {
         var profileUrl = string.Concat(_clientUrlSettings.ProfileUrl, "/api/profiles/create-profile");
