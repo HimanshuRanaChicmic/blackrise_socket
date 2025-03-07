@@ -358,6 +358,13 @@ public class AuthService : IAuthService
 
             var token = await _userManager.GeneratePasswordResetTokenAsync(existingUser);
 
+            // Ensure new password is not the same as the old one
+            var passwordHasher = _userManager.PasswordHasher;
+            if (passwordHasher.VerifyHashedPassword(existingUser, existingUser.PasswordHash, password) == PasswordVerificationResult.Success)
+            {
+                throw new BadRequestException("New password must be different from the previous one. Please choose a new password.");
+            }
+
             var resetPasswordResult = await _userManager.ResetPasswordAsync(existingUser, token, password);
 
             if (!resetPasswordResult.Succeeded)
