@@ -140,6 +140,9 @@ public class AuthService : IAuthService
             {
                 newUser.Id = existingUser.Id;
                 await UpdateProfileAsync(newUser, signupCommand);
+
+                await SendEmailConfirmationCodeAsync(existingUser);
+
             }
             else
             {
@@ -150,9 +153,10 @@ public class AuthService : IAuthService
 
                 _ = await _userManager.AddToRoleAsync(newUser, Role.User.ToString());
                 await CreateProfileAsync(newUser, signupCommand);
+
+                await SendEmailConfirmationCodeAsync(newUser);
             }
 
-            await SendEmailConfirmationCodeAsync(newUser);
 
             return "Success";
         }
