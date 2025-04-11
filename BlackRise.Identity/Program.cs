@@ -37,6 +37,7 @@ builder.Services.AddHttpClientServices(builder.Configuration);
 builder.Services.AddApplicationServices(builder.Configuration);
 builder.Services.AddPersistenceServices(builder.Configuration);
 builder.Services.AddIdentityServices(builder);
+builder.Services.AddHealthChecks();
 
 
 //var result = builder.Configuration.GetSection("CorsUrls").Value;
@@ -57,6 +58,8 @@ builder.Services.AddIdentityServices(builder);
 //});
 
 var app = builder.Build();
+
+app.MapHealthChecks("/security/health");
 
 app.UseStaticFiles();
 
