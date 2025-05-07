@@ -24,7 +24,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BlackRise.Identity.Controllers
 {
-    [Route("api/auth")]
+    [Route("security-service/api/auth")]
     [ApiController]
     public class AuthController : ControllerBase
     {
