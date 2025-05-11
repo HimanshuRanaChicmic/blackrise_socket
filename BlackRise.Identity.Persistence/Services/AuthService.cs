@@ -264,7 +264,7 @@ public class AuthService : IAuthService
 
     private async Task CreateProfileAsync(ApplicationUser existingUser, SignupCommand signupCommand)
     {
-        var profileUrl = string.Concat(_clientUrlSettings.ProfileUrl, "/api/profiles/create-profile");
+        var profileUrl = string.Concat(_clientUrlSettings.ProfileUrl, "/profile-service/api/profiles/create-profile");
 
         var profileObj = new
         {
@@ -282,7 +282,7 @@ public class AuthService : IAuthService
 
     private async Task UpdateProfileAsync(ApplicationUser existingUser, SignupCommand signupCommand)
     {
-        var profileUrl = string.Concat(_clientUrlSettings.ProfileUrl, "/api/profiles/update-profile");
+        var profileUrl = string.Concat(_clientUrlSettings.ProfileUrl, "/profile-service/api/profiles/update-profile");
 
         var profileObj = new
         {
@@ -435,7 +435,7 @@ public class AuthService : IAuthService
 
             var messageBody = $"<p> Hi </p> <br /><br /> <p> Your confirmation code is {code}. It will expire in 10 minutes.";
 
-            var senderUrl = string.Concat(_clientUrlSettings.SenderUrl, "/api/email-sender/send-email");
+            var senderUrl = string.Concat(_clientUrlSettings.SenderUrl, "/email-service/api/email-sender/send-email");
 
             var reqBody = new
             {
@@ -476,7 +476,7 @@ public class AuthService : IAuthService
     private async Task<BaseResponseDto> SendPasswordResetEmailAsync(ApplicationUser applicationUser)
     {
         var code = await GeneratePasswordResetCodeAsync(applicationUser);
-        var senderUrl = string.Concat(_clientUrlSettings.SenderUrl, "/api/email-sender/send-email");
+        var senderUrl = string.Concat(_clientUrlSettings.SenderUrl, "/email-service/api/email-sender/send-email");
         var messageBody = $"<p> Hi </p> <br /><br /> <p>below is the password reset code. <br /><br /> {code} <br /><br /> <p>Thanks</p> </p>";
 
         var reqBody = new
