@@ -1,10 +1,10 @@
 
-name: Deploy client-portal to ECS
+name: Deploy security service to ECS Dev
 
 on:
   push:
     branches:
-      - ecs-deploy-dev
+      - dev
 
 env:
   AWS_REGION: eu-west-2               
