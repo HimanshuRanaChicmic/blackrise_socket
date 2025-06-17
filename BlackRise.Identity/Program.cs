@@ -40,22 +40,22 @@ builder.Services.AddIdentityServices(builder);
 builder.Services.AddHealthChecks();
 
 
-//var result = builder.Configuration.GetSection("CorsUrls").Value;
-//var urls = (result != null && result.Split(',').Any()) ? result.Split(',') : Array.Empty<string>();
+var result = builder.Configuration.GetSection("CorsUrls").Value;
+var urls = (result != null && result.Split(',').Any()) ? result.Split(',') : Array.Empty<string>();
 
-//var myAllowSpecificOrigins = "_myAllowSpecificOrigins";
+var myAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
-//builder.Services.AddCors(options =>
-//{
-//    options.AddPolicy(myAllowSpecificOrigins,
-//                        policy =>
-//                        {
-//                            policy.WithOrigins(urls)
-//                                  .AllowAnyHeader()
-//                                  .AllowAnyMethod()
-//                                  .AllowCredentials();
-//                        });
-//});
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(myAllowSpecificOrigins,
+                        policy =>
+                        {
+                            policy.WithOrigins(urls)
+                                  .AllowAnyHeader()
+                                  .AllowAnyMethod()
+                                  .AllowCredentials();
+                        });
+});
 
 var app = builder.Build();
 
@@ -77,7 +77,7 @@ app.UseStaticFiles();
 app.UseHttpsRedirection();
 
 app.UseRouting();
-//app.UseCors(myAllowSpecificOrigins);
+app.UseCors(myAllowSpecificOrigins);
 
 app.UseAuthentication();
 app.UseAuthorization();
