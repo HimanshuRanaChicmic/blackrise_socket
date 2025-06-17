@@ -264,7 +264,7 @@ public class AuthService : IAuthService
 
     private async Task CreateProfileAsync(ApplicationUser existingUser, SignupCommand signupCommand)
     {
-        var profileUrl = string.Concat(_clientUrlSettings.ProfileUrl, "/profile-service/api/profiles/create-profile");
+        var profileUrl = string.Concat(_clientUrlSettings.ProfileUrl, "/api/profiles/create-profile");
 
         var profileObj = new
         {
@@ -282,7 +282,7 @@ public class AuthService : IAuthService
 
     private async Task UpdateProfileAsync(ApplicationUser existingUser, SignupCommand signupCommand)
     {
-        var profileUrl = string.Concat(_clientUrlSettings.ProfileUrl, "/profile-service/api/profiles/update-profile");
+        var profileUrl = string.Concat(_clientUrlSettings.ProfileUrl, "/api/profiles/update-profile");
 
         var profileObj = new
         {
