@@ -61,10 +61,18 @@ var app = builder.Build();
 
 app.MapHealthChecks("/security-service/health");
 
-app.UseStaticFiles();
+app.UseSwagger(c =>
+{
+    c.RouteTemplate = "security-service/swagger/{documentName}/swagger.json";
+});
 
-app.UseSwagger();
-app.UseSwaggerUI();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/security-service/swagger/v1/swagger.json", "BlackRise Security Service");
+    c.RoutePrefix = "security-service/swagger";
+});
+
+app.UseStaticFiles();
 
 app.UseHttpsRedirection();
 
