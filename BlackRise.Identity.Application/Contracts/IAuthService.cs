@@ -10,7 +10,9 @@ public interface IAuthService
     Task<string> ResendEmailConfirmationAsync(string email);
     Task<string> ResendResetPasswordCodeAsync(string email);
     Task<string> LoginAsync(string username, string password);
-    Task<string> LoginWithLinkedInAsync(string linkedInCode);
+    Task<string> LoginWithLinkedInAsync(string accessToken);
+    Task<string> LoginWithGoogleAsync(string accessToken);
+    Task<string> LoginWithAppleAsync(string accessToken);
     Task<string> ForgotPasswordAsync(string email);
     Task<string> ResetConfirmationAsync(string email, string code);
     Task<string> ResetPasswordAsync(string email, string password);

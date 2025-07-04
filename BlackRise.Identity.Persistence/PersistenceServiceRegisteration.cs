@@ -24,6 +24,7 @@ public static class PersistenceServiceRegisteration
         services.Configure<JwtSetting>(configuration.GetSection("JwtSettings"));
         services.Configure<EmailSetting>(configuration.GetSection("EmailSettings"));
         services.Configure<LinkedInSetting>(configuration.GetSection("LinkedInSetting"));
+        services.Configure<AppleSetting>(configuration.GetSection("AppleSetting"));
 
         return services;
     }

@@ -6,14 +6,19 @@ using BlackRise.Identity.Application.Settings;
 using BlackRise.Identity.Domain;
 using BlackRise.Identity.Domain.Common.Enums;
 using BlackRise.Identity.Persistence.Settings;
+using Google.Apis.Auth;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json.Linq;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
+using BlackRise.Identity.Persistence.Utils;
 
 namespace BlackRise.Identity.Persistence.Services;
 
@@ -23,12 +28,14 @@ public class AuthService : IAuthService
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly RoleManager<ApplicationRole> _roleManager;
     private readonly JwtSetting _jwtSettings;
+    private readonly AppleSetting _appleSetting;
     private readonly ClientUrlSetting _clientUrlSettings;
     private readonly LinkedInSetting _linkedInSetting;
     private readonly IHttpWrapper _httpWrapper;
     public AuthService(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager,
         RoleManager<ApplicationRole> roleManager,
         IOptions<JwtSetting> jwtSettings,
+        IOptions<AppleSetting> appleSetting,
         IOptions<ClientUrlSetting> clientUrlSettings, IHttpWrapper httpWrapper, IOptions<LinkedInSetting> linkedInSetting)
     {
         _userManager = userManager;
@@ -38,6 +45,7 @@ public class AuthService : IAuthService
         _httpWrapper = httpWrapper;
         _jwtSettings = jwtSettings.Value;
         _linkedInSetting = linkedInSetting.Value;
+        _appleSetting = appleSetting.Value;
     }
 
     public async Task<string> LoginAsync(string username, string password)
@@ -47,18 +55,21 @@ public class AuthService : IAuthService
             var user = await _userManager.FindByEmailAsync(username);
 
             if (user == null || user.IsDeleted)
-                throw new BadRequestException("Invalid email/password");
+                throw new BadRequestException(Constants.InvalidEmailPassword);
 
-            if(!user.IsActive)
-                throw new BadRequestException("User account disabled");
+            if(user.PasswordHash == null)
+                throw new BadRequestException(Constants.UserPasswordNotSet);
+
+            if (!user.IsActive)
+                throw new BadRequestException(Constants.UserAccountDisabled);
 
             var result = await _signInManager.PasswordSignInAsync(username, password, false, false);
 
             if (result.IsNotAllowed)
-                throw new BadRequestException($"email not confirm");
+                throw new BadRequestException(Constants.EmailNotConfirmed);
 
             if (!result.Succeeded)
-                throw new BadRequestException($"invalid username/password");
+                throw new BadRequestException(Constants.InvalidUsernamePassword);
 
             string token = await GenerateTokenAsync(user);
 
@@ -77,7 +88,7 @@ public class AuthService : IAuthService
             var existingUser = await _userManager.FindByEmailAsync(username);
 
             if (existingUser != null)
-                throw new BadRequestException("User already exists");
+                throw new BadRequestException(Constants.EmailAlreadyRegistered);
 
             var newUser = new ApplicationUser 
             { 
@@ -97,13 +108,13 @@ public class AuthService : IAuthService
             var result = await _userManager.CreateAsync(newUser, password);
 
             if (!result.Succeeded)
-                throw new BadRequestException($"Error while creating user {result.Errors.First().Description}");
+                throw new BadRequestException($"{Constants.ErrorCreatingUser}: {result.Errors.First().Description}");
 
             _ = await _userManager.AddToRoleAsync(newUser, Role.User.ToString());
 
             await SendEmailConfirmationCodeAsync(newUser);
 
-            return "Success";
+            return Constants.OtpSentSuccessfully;
         }
         catch (Exception)
         {
@@ -117,8 +128,8 @@ public class AuthService : IAuthService
         {
             var existingUser = await _userManager.FindByEmailAsync(signupCommand.Email);
 
-            if (existingUser != null && existingUser.EmailConfirmed)
-                throw new BadRequestException("User already exists");
+            if (existingUser != null && existingUser.EmailConfirmed && existingUser.PasswordHash != null)
+                throw new BadRequestException(Constants.EmailAlreadyRegistered);
 
             var newUser = new ApplicationUser
             {
@@ -146,10 +157,10 @@ public class AuthService : IAuthService
             }
             else
             {
-                var result = await _userManager.CreateAsync(newUser, "Temp@13221212");
+                var result = await _userManager.CreateAsync(newUser);
 
                 if (!result.Succeeded)
-                    throw new BadRequestException($"Error while creating user {result.Errors.First().Description}");
+                    throw new BadRequestException($"{Constants.ErrorCreatingUser}: {result.Errors.First().Description}");
 
                 _ = await _userManager.AddToRoleAsync(newUser, Role.User.ToString());
                 await CreateProfileAsync(newUser, signupCommand);
@@ -158,7 +169,7 @@ public class AuthService : IAuthService
             }
 
 
-            return "Success";
+            return Constants.OtpSentSuccessfully;
         }
         catch (Exception ex)
         {
@@ -173,7 +184,7 @@ public class AuthService : IAuthService
             var existingUser = await _userManager.FindByEmailAsync(email);
 
             if (existingUser == null)
-                throw new BadRequestException("Invalid user");
+                throw new BadRequestException(Constants.InvalidUserEmail);
 
             PasswordHasher<ApplicationUser> passwordHasher = new();
 
@@ -184,7 +195,7 @@ public class AuthService : IAuthService
             if (!result.Succeeded)
                 throw new BadRequestException($"Error while updating user password {result.Errors.First().Description}");
 
-            return new Tuple<Guid, string>(existingUser.Id,"Success");
+            return new Tuple<Guid, string>(existingUser.Id, Constants.PasswordUpdated);
         }
         catch (Exception)
         {
@@ -199,13 +210,13 @@ public class AuthService : IAuthService
             var existingUser = await _userManager.FindByEmailAsync(email);
 
             if (existingUser == null)
-                throw new BadRequestException("Invalid user email");
+                throw new BadRequestException(Constants.InvalidUserEmail);
 
             if (existingUser.EmailConfirmationCode != code)
-                throw new BadRequestException("Invalid code");
+                throw new BadRequestException(Constants.InvalidOtp);
 
             if (existingUser.EmailConfirmationCodeExpiry < DateTime.UtcNow)
-                throw new BadRequestException("Code has expired");
+                throw new BadRequestException(Constants.OtpExpired);
 
             existingUser.EmailConfirmed = true;
             existingUser.EmailConfirmationCode = null;
@@ -213,9 +224,9 @@ public class AuthService : IAuthService
             var result = await _userManager.UpdateAsync(existingUser);
 
             if (!result.Succeeded)
-                throw new BadRequestException($"Error while confirm user email {result.Errors.First().Description}");
+                throw new BadRequestException($"Error while confirming user email {result.Errors.First().Description}");
 
-            return "Success";
+            return Constants.OtpVerifiedSuccessfully;
         }
         catch (Exception ex)
         {
@@ -229,11 +240,11 @@ public class AuthService : IAuthService
             var existingUser = await _userManager.FindByEmailAsync(email);
 
             if (existingUser == null)
-                throw new BadRequestException("Invalid user email");
+                throw new BadRequestException(Constants.InvalidUserEmail);
 
             await SendEmailConfirmationCodeAsync(existingUser);
 
-            return "Success";
+            return Constants.OtpSentSuccessfully;
         }
         catch (Exception ex)
         {
@@ -247,14 +258,14 @@ public class AuthService : IAuthService
             var existingUser = await _userManager.FindByEmailAsync(email);
 
             if (existingUser == null || existingUser.IsDeleted)
-                throw new BadRequestException("Invalid user email");
+                throw new BadRequestException(Constants.InvalidUserEmail);
 
             if (!existingUser.IsActive)
-                throw new UnAuthorizedException($"user account disabled");
+                throw new UnAuthorizedException(Constants.UserAccountDisabled);
 
             await SendPasswordResetEmailAsync(existingUser);
 
-            return "Success";
+            return Constants.OtpSentSuccessfully;
         }
         catch (Exception ex)
         {
@@ -262,19 +273,19 @@ public class AuthService : IAuthService
         }
     }
 
-    private async Task CreateProfileAsync(ApplicationUser existingUser, SignupCommand signupCommand)
+    private async Task CreateProfileAsync(ApplicationUser existingUser, SignupCommand? signupCommand = null)
     {
         var profileUrl = string.Concat(_clientUrlSettings.ProfileUrl, "/api/profiles/create-profile");
 
         var profileObj = new
         {
             existingUser.Id,
-            signupCommand.FirstName,
-            signupCommand.LastName,
+            signupCommand?.FirstName,
+            signupCommand?.LastName,
             existingUser.Email,
-            signupCommand.DateOfBirth,
-            signupCommand.IsReceiveBlackRiseEmails,
-            signupCommand.IsReconnectWithEmail,
+            signupCommand?.DateOfBirth,
+            signupCommand?.IsReceiveBlackRiseEmails,
+            signupCommand?.IsReconnectWithEmail,
         };
 
         await _httpWrapper.PostAsync<object, object>(profileUrl, profileObj);
@@ -305,14 +316,17 @@ public class AuthService : IAuthService
             var existingUser = await _userManager.FindByEmailAsync(email);
 
             if (existingUser == null || existingUser.IsDeleted)
-                throw new BadRequestException("Invalid user email");
+                throw new BadRequestException(Constants.InvalidUserEmail);
 
             if (!existingUser.IsActive)
-                throw new UnAuthorizedException($"user account disabled");
+                throw new UnAuthorizedException(Constants.UserAccountDisabled);
+
+            if(existingUser.PasswordHash == null)
+                throw new BadRequestException(Constants.AccountDoesNotExist);
 
             await SendPasswordResetEmailAsync(existingUser);
 
-            return "Success";
+            return "OTP sent successfully.";
         }
         catch (Exception)
         {
@@ -327,13 +341,13 @@ public class AuthService : IAuthService
             var existingUser = await _userManager.FindByEmailAsync(email);
 
             if (existingUser == null)
-                throw new BadRequestException("Invalid user email");
+                throw new BadRequestException(Constants.InvalidUserEmail);
 
             if (existingUser.ResetPasswordCode != code)
-                throw new BadRequestException("Invalid code");
+                throw new BadRequestException(Constants.InvalidOtp);
 
             if (existingUser.ResetPasswordCodeExpiry < DateTime.UtcNow)
-                throw new BadRequestException("Code has expired");
+                throw new BadRequestException(Constants.OtpExpired);
 
             existingUser.ResetPasswordCode = null;
             existingUser.ResetPasswordCodeExpiry = null;
@@ -342,7 +356,7 @@ public class AuthService : IAuthService
             if (!result.Succeeded)
                 throw new BadRequestException($"Error while confirm user email {result.Errors.First().Description}");
 
-            return "Success";
+            return Constants.Success;
         }
         catch (Exception ex)
         {
@@ -358,7 +372,7 @@ public class AuthService : IAuthService
             var existingUser = await _userManager.FindByEmailAsync(email);
 
             if (existingUser == null || existingUser.IsDeleted)
-                throw new BadRequestException("Invalid user email");
+                throw new BadRequestException(Constants.InvalidUserEmail);
 
             var token = await _userManager.GeneratePasswordResetTokenAsync(existingUser);
 
@@ -366,7 +380,7 @@ public class AuthService : IAuthService
             var passwordHasher = _userManager.PasswordHasher;
             if (passwordHasher.VerifyHashedPassword(existingUser, existingUser.PasswordHash, password) == PasswordVerificationResult.Success)
             {
-                throw new BadRequestException("New password must be different from the previous one. Please choose a new password.");
+                throw new BadRequestException(Constants.DifferentNewPassword);
             }
 
             var resetPasswordResult = await _userManager.ResetPasswordAsync(existingUser, token, password);
@@ -374,7 +388,7 @@ public class AuthService : IAuthService
             if (!resetPasswordResult.Succeeded)
               throw new BadRequestException(resetPasswordResult.Errors.First().Description);
 
-            return "Success";
+            return Constants.Success;
         }
         catch (Exception)
         {
@@ -393,7 +407,7 @@ public class AuthService : IAuthService
         {
             new(ClaimTypes.Email, user.Email ?? ""),
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new(ClaimTypes.Role, roles[0].ToString()),
+            new(ClaimTypes.Role, roles?[0].ToString()),
         };
 
         claims.AddRange(userClaims);
@@ -491,30 +505,45 @@ public class AuthService : IAuthService
         return result;
     }
 
-    public async Task<string> LoginWithLinkedInAsync(string linkedInCode)
+    public async Task<string> LoginWithGoogleAsync(string accessToken)
     {
-        var linkedInToken = await GetLinkedInAccessTokenAsync(linkedInCode);
+        GoogleJsonWebSignature.Payload payload;
+        try
+        {
+            payload = await GoogleJsonWebSignature.ValidateAsync(accessToken);
+        }
+        catch (InvalidJwtException ex)
+        {
+            throw new UnauthorizedAccessException(Constants.GoogleLoginNotVerified, ex);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception(Constants.GoogleLoginNotVerified, ex);
+        }
+        if (payload == null)
+            throw new UnauthorizedAccessException(Constants.GoogleLoginNotVerified);
 
-        var linkedInUser = await GetLinkedInUserProfileAsync(linkedInToken);
-
-        var user = await _userManager.FindByEmailAsync(linkedInUser.Email);
+        var email = payload.Email;
+        var user = await _userManager.FindByEmailAsync(email);
 
         if (user == null)
         {
             user = new ApplicationUser
             {
-                UserName = linkedInUser.Email,
-                Email = linkedInUser.Email,
-                IsActive = true,
+                UserName = email,
+                Email = email,
+                NormalizedEmail = email.ToUpper(),
+                NormalizedUserName = email.ToUpper(),
                 EmailConfirmed = true,
+                IsActive = true,
+                IsDeleted = false,
                 CreatedDate = DateTime.UtcNow,
                 ModifiedDate = DateTime.UtcNow
             };
 
             var result = await _userManager.CreateAsync(user);
-
             if (!result.Succeeded)
-                throw new BadRequestException("Failed to create user with LinkedIn credentials.");
+                throw new BadRequestException(Constants.AccountNotCreatedWithGoogle);
 
             await _userManager.AddToRoleAsync(user, Role.User.ToString());
         }
@@ -522,40 +551,172 @@ public class AuthService : IAuthService
         string token = await GenerateTokenAsync(user);
         return token;
     }
-    private async Task<string> GetLinkedInAccessTokenAsync(string code)
+    public async Task<string> LoginWithLinkedInAsync(string accessToken)
     {
-        var values = new Dictionary<string, string>
+        LinkedInUser linkedInUser;
+        try
+        {
+            linkedInUser = await GetLinkedInUserProfileAsync(accessToken);
+
+            if (linkedInUser == null || string.IsNullOrEmpty(linkedInUser.Email))
+                throw new UnauthorizedAccessException(Constants.LinkedInLoginNotVerified);
+        }
+        catch (InvalidJwtException ex)
+        {
+            throw new UnauthorizedAccessException(Constants.LinkedInLoginNotVerified, ex);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception(Constants.LinkedInLoginNotVerified, ex);
+        }
+        if (linkedInUser == null)
+            throw new UnauthorizedAccessException(Constants.LinkedInLoginNotVerified);
+
+
+        var user = await _userManager.FindByEmailAsync(linkedInUser.Email);
+        if (user == null)
+        {
+            user = new ApplicationUser
+            {
+                UserName = linkedInUser.Email,
+                Email = linkedInUser.Email,
+                NormalizedEmail = linkedInUser.Email.ToUpper(),
+                NormalizedUserName = linkedInUser.Email.ToUpper(),
+                EmailConfirmed = true,
+                IsActive = true,
+                IsDeleted = false,
+                CreatedDate = DateTime.UtcNow,
+                ModifiedDate = DateTime.UtcNow
+            };
+
+            var result = await _userManager.CreateAsync(user);
+            if (!result.Succeeded)
+                throw new Exception(Constants.AccountNotCreatedWithLinkedIn);
+
+            await _userManager.AddToRoleAsync(user, Role.User.ToString());
+        }
+
+        var jwtToken = await GenerateTokenAsync(user);
+
+        return jwtToken;
+    }
+    public async Task<string> LoginWithAppleAsync(string accessToken)
     {
-        { "grant_type", "authorization_code" },
-        { "code", code },
-        { "redirect_uri", _linkedInSetting.LinkedInRedirectUri },
-        { "client_id", _linkedInSetting.LinkedInClientId },
-        { "client_secret", _linkedInSetting.LinkedInClientSecret}
-    };
+        JwtSecurityToken appleJwt;
+        try
+        {
+            appleJwt = await VerifyAppleIdTokenAsync(accessToken);
+        }
+        catch (InvalidJwtException ex)
+        {
+            throw new UnauthorizedAccessException(Constants.AppleLoginNotVerified, ex);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception(Constants.AppleLoginNotVerified, ex);
+        }
+        if (appleJwt == null)
+            throw new UnauthorizedAccessException(Constants.AppleLoginNotVerified);
 
-        using var client = new HttpClient();
-        var content = new FormUrlEncodedContent(values);
-        var response = await client.PostAsync("https://www.linkedin.com/oauth/v2/accessToken", content);
+        var email = appleJwt.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
+        var emailVerified = appleJwt.Claims.FirstOrDefault(c => c.Type == "email_verified")?.Value;
+        var appleUserId = appleJwt.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
 
-        if (!response.IsSuccessStatusCode)
-            throw new Exception("Failed to retrieve LinkedIn access token");
+        if (string.IsNullOrEmpty(appleUserId))
+            throw new UnauthorizedAccessException(Constants.AppleLoginNotVerified);
 
-        var result = await response.Content.ReadFromJsonAsync<LinkedInTokenResponse>();
+        var user = await _userManager.FindByLoginAsync("Apple", appleUserId);
+        if (user == null)
+        {
+            user = new ApplicationUser
+            {
+                UserName = email ?? appleUserId,
+                Email = email,
+                NormalizedEmail = email.ToUpper(),
+                NormalizedUserName = email.ToUpper(),
+                EmailConfirmed = true,
+                IsActive = true,
+                IsDeleted = false,
+                CreatedDate = DateTime.UtcNow,
+                ModifiedDate = DateTime.UtcNow
+            };
+            var result = await _userManager.CreateAsync(user);
+            if (!result.Succeeded)
+                throw new Exception(Constants.AccountNotCreatedWithApple);
 
-        return result.AccessToken;
+            await _userManager.AddLoginAsync(user, new UserLoginInfo("Apple", appleUserId, "Apple"));
+            await CreateProfileAsync(user);
+            await _userManager.AddToRoleAsync(user, Role.User.ToString());
+        }
+
+        var jwtToken = await GenerateTokenAsync(user);
+
+        return jwtToken;
+    }
+    public async Task<JwtSecurityToken> VerifyAppleIdTokenAsync(string accessToken)
+    {
+        var keys = await GetAppleKeysAsync();
+
+        var handler = new JwtSecurityTokenHandler();
+        var jwt = handler.ReadJwtToken(accessToken);
+        var kid = jwt.Header.Kid;
+        var alg = jwt.Header.Alg;
+
+        var key = keys?.First(k => k?["kid"]?.ToString() == kid && k?["alg"]?.ToString() == alg);
+
+        var rsa =  CreateSecurityKeyFromJwk(key, kid);
+
+        var validationParameters = new TokenValidationParameters
+        {
+            IssuerSigningKey = rsa,
+            ValidIssuer = _appleSetting.Issuer,
+            ValidAudience = _appleSetting.Audience,
+            ValidateIssuerSigningKey = true,
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromMinutes(5)
+        };
+
+        try
+        {
+            handler.ValidateToken(accessToken, validationParameters, out var validatedToken);
+            return (JwtSecurityToken)validatedToken;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Token validation failed: {ex.Message}");
+            return null;
+        }
     }
     private async Task<LinkedInUser> GetLinkedInUserProfileAsync(string accessToken)
     {
         using var client = new HttpClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-        var response = await client.GetAsync("https://api.linkedin.com/v2/me?projection=(id,localizedFirstName,localizedLastName,emailAddress)");
+        var response = await client.GetAsync(_linkedInSetting.LinkedInUserProfileUrl);
 
         if (!response.IsSuccessStatusCode)
             throw new Exception("Failed to retrieve LinkedIn user profile");
 
         return await response.Content.ReadFromJsonAsync<LinkedInUser>();
     }
+    private async Task<JArray?> GetAppleKeysAsync()
+    {
+        using var client = new HttpClient();
+        var keysJson = await client.GetStringAsync(_appleSetting.AuthKeysUrl);
+        var keys = JObject.Parse(keysJson)?["keys"] as JArray;
+        return keys;
+    }
+    private static RsaSecurityKey CreateSecurityKeyFromJwk(JToken key, string kid)
+    {
+        var e = Base64UrlEncoder.DecodeBytes(key["e"]!.ToString());
+        var n = Base64UrlEncoder.DecodeBytes(key["n"]!.ToString());
 
+        var rsaParameters = new RSAParameters { Exponent = e, Modulus = n };
+        var rsa = RSA.Create();
+        rsa.ImportParameters(rsaParameters);
 
+        return new RsaSecurityKey(rsa) { KeyId = kid };
+    }
 }
