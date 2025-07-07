@@ -2,6 +2,6 @@
 
 namespace BlackRise.Identity.Application.Feature.VerifyResetPasswordCode;
 
-public class VerifyResetPasswordCodeDto(string result) : BaseResponseDto(result)
+public class VerifyResetPasswordCodeDto(string result) : BaseResponseDto<string>(result)
 {
 }

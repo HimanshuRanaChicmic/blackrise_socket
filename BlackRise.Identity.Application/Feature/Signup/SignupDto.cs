@@ -2,6 +2,6 @@
 
 namespace BlackRise.Identity.Application.Feature.Signup;
 
-public class SignupDto(string result):BaseResponseDto(result)
+public class SignupDto(string result):BaseResponseDto<string>(result)
 {
 }

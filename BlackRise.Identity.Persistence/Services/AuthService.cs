@@ -6,6 +6,7 @@ using BlackRise.Identity.Application.Settings;
 using BlackRise.Identity.Domain;
 using BlackRise.Identity.Domain.Common.Enums;
 using BlackRise.Identity.Persistence.Settings;
+using BlackRise.Identity.Persistence.Utils;
 using Google.Apis.Auth;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
@@ -17,8 +18,7 @@ using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.EntityFrameworkCore;
-using BlackRise.Identity.Persistence.Utils;
+using System.Text.Json;
 
 namespace BlackRise.Identity.Persistence.Services;
 
@@ -50,163 +50,133 @@ public class AuthService : IAuthService
 
     public async Task<string> LoginAsync(string username, string password)
     {
-        try
-        {
-            var user = await _userManager.FindByEmailAsync(username);
+        var user = await _userManager.FindByEmailAsync(username);
 
-            if (user == null || user.IsDeleted)
-                throw new BadRequestException(Constants.InvalidEmailPassword);
+        if (user == null || user.IsDeleted)
+            throw new BadRequestException(Constants.InvalidEmailPassword);
 
-            if(user.PasswordHash == null)
-                throw new BadRequestException(Constants.UserPasswordNotSet);
+        if(user.PasswordHash == null)
+            throw new BadRequestException(Constants.UserPasswordNotSet);
 
-            if (!user.IsActive)
-                throw new BadRequestException(Constants.UserAccountDisabled);
+        if (!user.IsActive)
+            throw new BadRequestException(Constants.UserAccountDisabled);
 
-            var result = await _signInManager.PasswordSignInAsync(username, password, false, false);
+        var result = await _signInManager.PasswordSignInAsync(username, password, false, false);
 
-            if (result.IsNotAllowed)
-                throw new BadRequestException(Constants.EmailNotConfirmed);
+        if (result.IsNotAllowed)
+            throw new BadRequestException(Constants.EmailNotConfirmed);
 
-            if (!result.Succeeded)
-                throw new BadRequestException(Constants.InvalidUsernamePassword);
+        if (!result.Succeeded)
+            throw new BadRequestException(Constants.InvalidUsernamePassword);
 
-            string token = await GenerateTokenAsync(user);
+        string token = await GenerateTokenAsync(user);
 
-            return token;
-        }
-        catch (Exception)
-        {
-            throw;
-        }
+        return token;
     }
 
     public async Task<string> RegisterAsync(string username, string password)
     {
-        try
+        var existingUser = await _userManager.FindByEmailAsync(username);
+
+        if (existingUser != null)
+            throw new BadRequestException(Constants.EmailAlreadyRegistered);
+
+        var newUser = new ApplicationUser 
+        { 
+            UserName = username,
+            NormalizedUserName = username.ToUpper(),
+            Email = username, 
+            NormalizedEmail = username.ToUpper(),
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            IsDeleted = false,
+            IsActive = true,
+            EmailConfirmed = false,
+        };
+        newUser.CreatedBy = newUser.Id;
+        newUser.ModifiedBy = newUser.Id;
+
+        var result = await _userManager.CreateAsync(newUser, password);
+
+        if (!result.Succeeded)
+            throw new BadRequestException($"{Constants.ErrorCreatingUser}: {result.Errors.First().Description}");
+
+        _ = await _userManager.AddToRoleAsync(newUser, Role.User.ToString());
+
+        await SendEmailConfirmationCodeAsync(newUser);
+
+        return Constants.OtpSentSuccessfully;
+    }
+
+    public async Task<string> RegisterAsync(SignupCommand signupCommand)
+    {
+        var existingUser = await _userManager.FindByEmailAsync(signupCommand.Email);
+
+        if (existingUser != null && existingUser.EmailConfirmed && existingUser.PasswordHash != null)
+            throw new BadRequestException(Constants.EmailAlreadyRegistered);
+
+        var newUser = new ApplicationUser
         {
-            var existingUser = await _userManager.FindByEmailAsync(username);
+            UserName = signupCommand.Email,
+            NormalizedUserName = signupCommand.Email.ToUpper(),
+            Email = signupCommand.Email,
+            NormalizedEmail = signupCommand.Email.ToUpper(),
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            IsDeleted = false,
+            IsActive = true,
+            EmailConfirmed = false,
+        };
+        newUser.CreatedBy = newUser.Id;
+        newUser.ModifiedBy = newUser.Id;
 
-            if (existingUser != null)
-                throw new BadRequestException(Constants.EmailAlreadyRegistered);
+           
+        if (existingUser != null && !existingUser.EmailConfirmed)
+        {
+            newUser.Id = existingUser.Id;
+            await UpdateProfileAsync(newUser, signupCommand);
 
-            var newUser = new ApplicationUser 
-            { 
-                UserName = username,
-                NormalizedUserName = username.ToUpper(),
-                Email = username, 
-                NormalizedEmail = username.ToUpper(),
-                CreatedDate = DateTime.UtcNow,
-                ModifiedDate = DateTime.UtcNow,
-                IsDeleted = false,
-                IsActive = true,
-                EmailConfirmed = false,
-            };
-            newUser.CreatedBy = newUser.Id;
-            newUser.ModifiedBy = newUser.Id;
+            await SendEmailConfirmationCodeAsync(existingUser);
 
-            var result = await _userManager.CreateAsync(newUser, password);
+        }
+        else
+        {
+            var result = await _userManager.CreateAsync(newUser);
 
             if (!result.Succeeded)
                 throw new BadRequestException($"{Constants.ErrorCreatingUser}: {result.Errors.First().Description}");
 
             _ = await _userManager.AddToRoleAsync(newUser, Role.User.ToString());
+            await CreateProfileAsync(newUser, signupCommand);
 
             await SendEmailConfirmationCodeAsync(newUser);
-
-            return Constants.OtpSentSuccessfully;
         }
-        catch (Exception)
-        {
-            throw;
-        }
-    }
-
-    public async Task<string> RegisterAsync(SignupCommand signupCommand)
-    {
-        try
-        {
-            var existingUser = await _userManager.FindByEmailAsync(signupCommand.Email);
-
-            if (existingUser != null && existingUser.EmailConfirmed && existingUser.PasswordHash != null)
-                throw new BadRequestException(Constants.EmailAlreadyRegistered);
-
-            var newUser = new ApplicationUser
-            {
-                UserName = signupCommand.Email,
-                NormalizedUserName = signupCommand.Email.ToUpper(),
-                Email = signupCommand.Email,
-                NormalizedEmail = signupCommand.Email.ToUpper(),
-                CreatedDate = DateTime.UtcNow,
-                ModifiedDate = DateTime.UtcNow,
-                IsDeleted = false,
-                IsActive = true,
-                EmailConfirmed = false,
-            };
-            newUser.CreatedBy = newUser.Id;
-            newUser.ModifiedBy = newUser.Id;
-
-           
-            if (existingUser != null && !existingUser.EmailConfirmed)
-            {
-                newUser.Id = existingUser.Id;
-                await UpdateProfileAsync(newUser, signupCommand);
-
-                await SendEmailConfirmationCodeAsync(existingUser);
-
-            }
-            else
-            {
-                var result = await _userManager.CreateAsync(newUser);
-
-                if (!result.Succeeded)
-                    throw new BadRequestException($"{Constants.ErrorCreatingUser}: {result.Errors.First().Description}");
-
-                _ = await _userManager.AddToRoleAsync(newUser, Role.User.ToString());
-                await CreateProfileAsync(newUser, signupCommand);
-
-                await SendEmailConfirmationCodeAsync(newUser);
-            }
 
 
-            return Constants.OtpSentSuccessfully;
-        }
-        catch (Exception ex)
-        {
-            throw;
-        }
+        return Constants.OtpSentSuccessfully;
     }
 
     public async Task<Tuple<Guid, string>> UpdateUserPasswordAsync(string email, string password)
     {
-        try
-        {
-            var existingUser = await _userManager.FindByEmailAsync(email);
+        var existingUser = await _userManager.FindByEmailAsync(email);
 
-            if (existingUser == null)
-                throw new BadRequestException(Constants.InvalidUserEmail);
+        if (existingUser == null)
+            throw new BadRequestException(Constants.InvalidUserEmail);
 
-            PasswordHasher<ApplicationUser> passwordHasher = new();
+        PasswordHasher<ApplicationUser> passwordHasher = new();
 
-            existingUser.PasswordHash = passwordHasher.HashPassword(existingUser, password);
+        existingUser.PasswordHash = passwordHasher.HashPassword(existingUser, password);
 
-            var result = await _userManager.UpdateAsync(existingUser);
+        var result = await _userManager.UpdateAsync(existingUser);
 
-            if (!result.Succeeded)
-                throw new BadRequestException($"Error while updating user password {result.Errors.First().Description}");
+        if (!result.Succeeded)
+            throw new BadRequestException($"Error while updating user password {result.Errors.First().Description}");
 
-            return new Tuple<Guid, string>(existingUser.Id, Constants.PasswordUpdated);
-        }
-        catch (Exception)
-        {
-            throw;
-        }
+        return new Tuple<Guid, string>(existingUser.Id, Constants.PasswordUpdated);
     }
 
     public async Task<string> EmailConfirmationAsync(string email, string code)
     {
-        try
-        {
             var existingUser = await _userManager.FindByEmailAsync(email);
 
             if (existingUser == null)
@@ -227,50 +197,32 @@ public class AuthService : IAuthService
                 throw new BadRequestException($"Error while confirming user email {result.Errors.First().Description}");
 
             return Constants.OtpVerifiedSuccessfully;
-        }
-        catch (Exception ex)
-        {
-            throw;
-        }
+
     }
     public async Task<string> ResendEmailConfirmationAsync(string email)
     {
-        try
-        {
-            var existingUser = await _userManager.FindByEmailAsync(email);
+        var existingUser = await _userManager.FindByEmailAsync(email);
 
-            if (existingUser == null)
-                throw new BadRequestException(Constants.InvalidUserEmail);
+        if (existingUser == null)
+            throw new BadRequestException(Constants.InvalidUserEmail);
 
-            await SendEmailConfirmationCodeAsync(existingUser);
+        await SendEmailConfirmationCodeAsync(existingUser);
 
-            return Constants.OtpSentSuccessfully;
-        }
-        catch (Exception ex)
-        {
-            throw;
-        }
+        return Constants.OtpSentSuccessfully;
     }
     public async Task<string> ResendResetPasswordCodeAsync(string email)
     {
-        try
-        {
-            var existingUser = await _userManager.FindByEmailAsync(email);
+        var existingUser = await _userManager.FindByEmailAsync(email);
 
-            if (existingUser == null || existingUser.IsDeleted)
-                throw new BadRequestException(Constants.InvalidUserEmail);
+        if (existingUser == null || existingUser.IsDeleted)
+            throw new BadRequestException(Constants.InvalidUserEmail);
 
-            if (!existingUser.IsActive)
-                throw new UnAuthorizedException(Constants.UserAccountDisabled);
+        if (!existingUser.IsActive)
+            throw new UnAuthorizedException(Constants.UserAccountDisabled);
 
-            await SendPasswordResetEmailAsync(existingUser);
+        await SendPasswordResetEmailAsync(existingUser);
 
-            return Constants.OtpSentSuccessfully;
-        }
-        catch (Exception ex)
-        {
-            throw;
-        }
+        return Constants.OtpSentSuccessfully;
     }
 
     private async Task CreateProfileAsync(ApplicationUser existingUser, SignupCommand? signupCommand = null)
@@ -311,89 +263,68 @@ public class AuthService : IAuthService
 
     public async Task<string> ForgotPasswordAsync(string email)
     {
-        try
-        {
-            var existingUser = await _userManager.FindByEmailAsync(email);
+        var existingUser = await _userManager.FindByEmailAsync(email);
 
-            if (existingUser == null || existingUser.IsDeleted)
-                throw new BadRequestException(Constants.InvalidUserEmail);
+        if (existingUser == null || existingUser.IsDeleted)
+            throw new BadRequestException(Constants.InvalidUserEmail);
 
-            if (!existingUser.IsActive)
-                throw new UnAuthorizedException(Constants.UserAccountDisabled);
+        if (!existingUser.IsActive)
+            throw new UnAuthorizedException(Constants.UserAccountDisabled);
 
-            if(existingUser.PasswordHash == null)
-                throw new BadRequestException(Constants.AccountDoesNotExist);
+        if(existingUser.PasswordHash == null)
+            throw new BadRequestException(Constants.AccountDoesNotExist);
 
-            await SendPasswordResetEmailAsync(existingUser);
+        await SendPasswordResetEmailAsync(existingUser);
 
-            return "OTP sent successfully.";
-        }
-        catch (Exception)
-        {
-            throw;
-        }
+        return "OTP sent successfully.";
     }
 
     public async Task<string> ResetConfirmationAsync(string email, string code)
     {
-        try
-        {
-            var existingUser = await _userManager.FindByEmailAsync(email);
+        var existingUser = await _userManager.FindByEmailAsync(email);
 
-            if (existingUser == null)
-                throw new BadRequestException(Constants.InvalidUserEmail);
+        if (existingUser == null)
+            throw new BadRequestException(Constants.InvalidUserEmail);
 
-            if (existingUser.ResetPasswordCode != code)
-                throw new BadRequestException(Constants.InvalidOtp);
+        if (existingUser.ResetPasswordCode != code)
+            throw new BadRequestException(Constants.InvalidOtp);
 
-            if (existingUser.ResetPasswordCodeExpiry < DateTime.UtcNow)
-                throw new BadRequestException(Constants.OtpExpired);
+        if (existingUser.ResetPasswordCodeExpiry < DateTime.UtcNow)
+            throw new BadRequestException(Constants.OtpExpired);
 
-            existingUser.ResetPasswordCode = null;
-            existingUser.ResetPasswordCodeExpiry = null;
-            var result = await _userManager.UpdateAsync(existingUser);
+        existingUser.ResetPasswordCode = null;
+        existingUser.ResetPasswordCodeExpiry = null;
+        var result = await _userManager.UpdateAsync(existingUser);
 
-            if (!result.Succeeded)
-                throw new BadRequestException($"Error while confirm user email {result.Errors.First().Description}");
+        if (!result.Succeeded)
+            throw new BadRequestException($"Error while confirm user email {result.Errors.First().Description}");
 
-            return Constants.Success;
-        }
-        catch (Exception ex)
-        {
-            throw;
-        }
+        return Constants.Success;
     }
 
 
     public async Task<string> ResetPasswordAsync(string email, string password)
     {
-        try
+        var existingUser = await _userManager.FindByEmailAsync(email);
+
+        if (existingUser == null || existingUser.IsDeleted)
+            throw new BadRequestException(Constants.InvalidUserEmail);
+
+        var token = await _userManager.GeneratePasswordResetTokenAsync(existingUser);
+
+        // Ensure new password is not the same as the old one
+        var passwordHasher = _userManager.PasswordHasher;
+        if (passwordHasher.VerifyHashedPassword(existingUser, existingUser.PasswordHash, password) == PasswordVerificationResult.Success)
         {
-            var existingUser = await _userManager.FindByEmailAsync(email);
-
-            if (existingUser == null || existingUser.IsDeleted)
-                throw new BadRequestException(Constants.InvalidUserEmail);
-
-            var token = await _userManager.GeneratePasswordResetTokenAsync(existingUser);
-
-            // Ensure new password is not the same as the old one
-            var passwordHasher = _userManager.PasswordHasher;
-            if (passwordHasher.VerifyHashedPassword(existingUser, existingUser.PasswordHash, password) == PasswordVerificationResult.Success)
-            {
-                throw new BadRequestException(Constants.DifferentNewPassword);
-            }
-
-            var resetPasswordResult = await _userManager.ResetPasswordAsync(existingUser, token, password);
-
-            if (!resetPasswordResult.Succeeded)
-              throw new BadRequestException(resetPasswordResult.Errors.First().Description);
-
-            return Constants.Success;
+            throw new BadRequestException(Constants.DifferentNewPassword);
         }
-        catch (Exception)
-        {
-            throw;
-        }
+
+        var resetPasswordResult = await _userManager.ResetPasswordAsync(existingUser, token, password);
+
+        if (!resetPasswordResult.Succeeded)
+            throw new BadRequestException(resetPasswordResult.Errors.First().Description);
+
+        return Constants.Success;
     }
 
     private async Task<string> GenerateTokenAsync(ApplicationUser user)
@@ -441,32 +372,24 @@ public class AuthService : IAuthService
         return tokenString;
     }
 
-    private async Task<BaseResponseDto> SendEmailConfirmationCodeAsync(ApplicationUser applicationUser)
+    private async Task<BaseResponseDto<string>> SendEmailConfirmationCodeAsync(ApplicationUser applicationUser)
     {
-        try
+        var code = await GenerateEmailConfirmationCodeAsync(applicationUser);
+
+        var messageBody = $"<p> Hi </p> <br /><br /> <p> Your confirmation code is {code}. It will expire in 10 minutes.";
+
+        var senderUrl = string.Concat(_clientUrlSettings.SenderUrl, "/api/email-sender/send-email");
+
+        var reqBody = new
         {
-            var code = await GenerateEmailConfirmationCodeAsync(applicationUser);
+            email = applicationUser.Email,
+            subject = "Email Confirmation Code",
+            body = messageBody
+        };
 
-            var messageBody = $"<p> Hi </p> <br /><br /> <p> Your confirmation code is {code}. It will expire in 10 minutes.";
+        var result = await _httpWrapper.PostAsync<object, BaseResponseDto<string>>(senderUrl, reqBody);
 
-            var senderUrl = string.Concat(_clientUrlSettings.SenderUrl, "/api/email-sender/send-email");
-
-            var reqBody = new
-            {
-                email = applicationUser.Email,
-                subject = "Email Confirmation Code",
-                body = messageBody
-            };
-
-            var result = await _httpWrapper.PostAsync<object, BaseResponseDto>(senderUrl, reqBody);
-
-            return result;
-        }
-        catch (Exception ex)
-        {
-            throw;
-        }
-
+        return result;
     }
 
     public async Task<string> GenerateEmailConfirmationCodeAsync(ApplicationUser user)
@@ -487,7 +410,7 @@ public class AuthService : IAuthService
         return code;
     }
 
-    private async Task<BaseResponseDto> SendPasswordResetEmailAsync(ApplicationUser applicationUser)
+    private async Task<BaseResponseDto<string>> SendPasswordResetEmailAsync(ApplicationUser applicationUser)
     {
         var code = await GeneratePasswordResetCodeAsync(applicationUser);
         var senderUrl = string.Concat(_clientUrlSettings.SenderUrl, "/api/email-sender/send-email");
@@ -500,17 +423,20 @@ public class AuthService : IAuthService
             body = messageBody
         };
 
-        var result = await _httpWrapper.PostAsync<object, BaseResponseDto>(senderUrl, reqBody);
+        var result = await _httpWrapper.PostAsync<object, BaseResponseDto<string>>(senderUrl, reqBody);
 
         return result;
     }
 
     public async Task<string> LoginWithGoogleAsync(string accessToken)
     {
-        GoogleJsonWebSignature.Payload payload;
         try
         {
-            payload = await GoogleJsonWebSignature.ValidateAsync(accessToken);
+            var payload = await GoogleJsonWebSignature.ValidateAsync(accessToken);
+            if (payload == null)
+                throw new UnauthorizedAccessException(Constants.GoogleLoginNotVerified);
+
+            return await HandleExternalLoginAsync(payload.Email, payload.GivenName, payload.FamilyName);
         }
         catch (InvalidJwtException ex)
         {
@@ -520,46 +446,19 @@ public class AuthService : IAuthService
         {
             throw new Exception(Constants.GoogleLoginNotVerified, ex);
         }
-        if (payload == null)
-            throw new UnauthorizedAccessException(Constants.GoogleLoginNotVerified);
-
-        var email = payload.Email;
-        var user = await _userManager.FindByEmailAsync(email);
-
-        if (user == null)
-        {
-            user = new ApplicationUser
-            {
-                UserName = email,
-                Email = email,
-                NormalizedEmail = email.ToUpper(),
-                NormalizedUserName = email.ToUpper(),
-                EmailConfirmed = true,
-                IsActive = true,
-                IsDeleted = false,
-                CreatedDate = DateTime.UtcNow,
-                ModifiedDate = DateTime.UtcNow
-            };
-
-            var result = await _userManager.CreateAsync(user);
-            if (!result.Succeeded)
-                throw new BadRequestException(Constants.AccountNotCreatedWithGoogle);
-
-            await _userManager.AddToRoleAsync(user, Role.User.ToString());
-        }
-
-        string token = await GenerateTokenAsync(user);
-        return token;
     }
-    public async Task<string> LoginWithLinkedInAsync(string accessToken)
+
+    public async Task<string> LoginWithLinkedInAsync(string code)
     {
-        LinkedInUser linkedInUser;
         try
         {
-            linkedInUser = await GetLinkedInUserProfileAsync(accessToken);
+            var gettoken = await GetLinkedInToken(code);
+            var linkedInUser = await GetLinkedInUserProfileAsync(gettoken);
 
             if (linkedInUser == null || string.IsNullOrEmpty(linkedInUser.Email))
                 throw new UnauthorizedAccessException(Constants.LinkedInLoginNotVerified);
+
+            return await HandleExternalLoginAsync(linkedInUser.Email, linkedInUser.FirstName, linkedInUser.LastName);
         }
         catch (InvalidJwtException ex)
         {
@@ -569,89 +468,124 @@ public class AuthService : IAuthService
         {
             throw new Exception(Constants.LinkedInLoginNotVerified, ex);
         }
-        if (linkedInUser == null)
-            throw new UnauthorizedAccessException(Constants.LinkedInLoginNotVerified);
+    }
 
+    public async Task<string> GetLinkedInToken(string authorizationCode)
+    {
+        var client = new HttpClient();
 
-        var user = await _userManager.FindByEmailAsync(linkedInUser.Email);
-        if (user == null)
+        var parameters = new Dictionary<string, string>
         {
-            user = new ApplicationUser
-            {
-                UserName = linkedInUser.Email,
-                Email = linkedInUser.Email,
-                NormalizedEmail = linkedInUser.Email.ToUpper(),
-                NormalizedUserName = linkedInUser.Email.ToUpper(),
-                EmailConfirmed = true,
-                IsActive = true,
-                IsDeleted = false,
-                CreatedDate = DateTime.UtcNow,
-                ModifiedDate = DateTime.UtcNow
-            };
+            { "grant_type", "authorization_code" },
+            { "code", authorizationCode },
+            { "redirect_uri", _linkedInSetting.LinkedInRedirectUri },
+            { "client_id", _linkedInSetting.LinkedInClientId },
+            { "client_secret", _linkedInSetting.LinkedInClientSecret }
+        };
 
-            var result = await _userManager.CreateAsync(user);
-            if (!result.Succeeded)
-                throw new Exception(Constants.AccountNotCreatedWithLinkedIn);
+        var content = new FormUrlEncodedContent(parameters);
+        var response = await client.PostAsync(_linkedInSetting.LinkedInOauthUrl, content);
 
-            await _userManager.AddToRoleAsync(user, Role.User.ToString());
+        if (!response.IsSuccessStatusCode)
+        {
+            var error = await response.Content.ReadAsStringAsync();
+            throw new Exception($"Error fetching access token: {error}");
         }
 
-        var jwtToken = await GenerateTokenAsync(user);
+        var responseJson = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var accessToken = responseJson.GetProperty("access_token").GetString();
 
-        return jwtToken;
+        return accessToken;
+    }
+    private async Task<LinkedInUser> GetLinkedInUserProfileAsync(string accessToken)
+    {
+        using var client = new HttpClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        client.DefaultRequestHeaders.Add("X-Restli-Protocol-Version", "2.0.0");
+
+        var response = await client.GetAsync(_linkedInSetting.LinkedUserInfoUrl);
+        var content = await response.Content.ReadAsStringAsync();
+        var userInfo = JsonDocument.Parse(content);
+
+        var email = userInfo.RootElement.GetProperty("email").GetString();
+        var firstName = userInfo.RootElement.GetProperty("given_name").GetString();
+        var lastName = userInfo.RootElement.GetProperty("family_name").GetString();
+
+        return new LinkedInUser
+        {
+            FirstName = firstName ?? "LinkedIn user",
+            LastName = lastName ?? "",
+            Email = email ?? ""
+        };
     }
     public async Task<string> LoginWithAppleAsync(string accessToken)
     {
-        JwtSecurityToken appleJwt;
         try
         {
-            appleJwt = await VerifyAppleIdTokenAsync(accessToken);
+            var appleJwt = await VerifyAppleIdTokenAsync(accessToken);
+            if (appleJwt == null)
+                throw new UnauthorizedAccessException(Constants.AppleLoginNotVerified);
+
+            var email = appleJwt.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
+            var userId = appleJwt.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+                throw new UnauthorizedAccessException(Constants.AppleLoginNotVerified);
+
+            return await HandleExternalLoginAsync(email, null, null, "Apple", userId);
         }
         catch (InvalidJwtException ex)
         {
             throw new UnauthorizedAccessException(Constants.AppleLoginNotVerified, ex);
         }
-        catch (Exception ex)
-        {
-            throw new Exception(Constants.AppleLoginNotVerified, ex);
-        }
-        if (appleJwt == null)
-            throw new UnauthorizedAccessException(Constants.AppleLoginNotVerified);
+    }
 
-        var email = appleJwt.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
-        var emailVerified = appleJwt.Claims.FirstOrDefault(c => c.Type == "email_verified")?.Value;
-        var appleUserId = appleJwt.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
 
-        if (string.IsNullOrEmpty(appleUserId))
-            throw new UnauthorizedAccessException(Constants.AppleLoginNotVerified);
+    private async Task<string> HandleExternalLoginAsync(string? email, string? firstName, string? lastName, string? provider = null, string? providerUserId = null)
+    {
+        ApplicationUser? user;
 
-        var user = await _userManager.FindByLoginAsync("Apple", appleUserId);
+        if (!string.IsNullOrEmpty(provider) && !string.IsNullOrEmpty(providerUserId))
+            user = await _userManager.FindByLoginAsync(provider, providerUserId);
+        else
+            user = await _userManager.FindByEmailAsync(email);
+
         if (user == null)
         {
+            var signupCommand = new SignupCommand
+            {
+                FirstName = string.IsNullOrWhiteSpace(firstName) ? "AppleUser" : firstName,
+                LastName = lastName ?? "",
+                IsReceiveBlackRiseEmails = false,
+                IsReconnectWithEmail = false,
+            };
             user = new ApplicationUser
             {
-                UserName = email ?? appleUserId,
-                Email = email,
-                NormalizedEmail = email.ToUpper(),
-                NormalizedUserName = email.ToUpper(),
+                UserName = email ?? providerUserId,
+                Email = email ?? providerUserId,
+                NormalizedEmail = (email ?? "").ToUpper(),
+                NormalizedUserName = (email ?? "").ToUpper(),
                 EmailConfirmed = true,
                 IsActive = true,
                 IsDeleted = false,
                 CreatedDate = DateTime.UtcNow,
                 ModifiedDate = DateTime.UtcNow
             };
+
             var result = await _userManager.CreateAsync(user);
             if (!result.Succeeded)
-                throw new Exception(Constants.AccountNotCreatedWithApple);
+                throw new ArgumentException($"Account could not be created.");
 
-            await _userManager.AddLoginAsync(user, new UserLoginInfo("Apple", appleUserId, "Apple"));
-            await CreateProfileAsync(user);
+            if (!string.IsNullOrEmpty(provider))
+            {
+                await _userManager.AddLoginAsync(user, new UserLoginInfo(provider, providerUserId, provider));
+            }
+
+            await CreateProfileAsync(user, signupCommand);
             await _userManager.AddToRoleAsync(user, Role.User.ToString());
         }
 
-        var jwtToken = await GenerateTokenAsync(user);
-
-        return jwtToken;
+        return await GenerateTokenAsync(user);
     }
     public async Task<JwtSecurityToken> VerifyAppleIdTokenAsync(string accessToken)
     {
@@ -689,18 +623,7 @@ public class AuthService : IAuthService
             return null;
         }
     }
-    private async Task<LinkedInUser> GetLinkedInUserProfileAsync(string accessToken)
-    {
-        using var client = new HttpClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-        var response = await client.GetAsync(_linkedInSetting.LinkedInUserProfileUrl);
-
-        if (!response.IsSuccessStatusCode)
-            throw new Exception("Failed to retrieve LinkedIn user profile");
-
-        return await response.Content.ReadFromJsonAsync<LinkedInUser>();
-    }
     private async Task<JArray?> GetAppleKeysAsync()
     {
         using var client = new HttpClient();

@@ -2,6 +2,6 @@
 
 namespace BlackRise.Identity.Application.Feature.ResendResetPassword;
 
-public class ResendResetPasswordDto(string result):BaseResponseDto(result)
+public class ResendResetPasswordDto(string result):BaseResponseDto<string>(result)
 {
 }

@@ -19,8 +19,11 @@ using BlackRise.Identity.Application.Feature.UpdatePassword;
 using BlackRise.Identity.Application.Feature.UpdatePassword.Commands;
 using BlackRise.Identity.Application.Feature.VerifyResetPasswordCode;
 using BlackRise.Identity.Application.Feature.VerifyResetPasswordCode.Commands;
+using BlackRise.Identity.Application.Settings;
+using BlackRise.Identity.Persistence.Settings;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace BlackRise.Identity.Controllers
 {
@@ -29,9 +32,12 @@ namespace BlackRise.Identity.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IMediator _mediator;
-        public AuthController(IMediator mediator)
+        private readonly ClientUrlSetting _clienturlSettings;
+        public AuthController(IMediator mediator, IOptions<ClientUrlSetting> clienturlSettings)
         {
             _mediator = mediator;
+            _clienturlSettings = clienturlSettings.Value;
+
         }
 
         [HttpPost("login")]
@@ -40,10 +46,13 @@ namespace BlackRise.Identity.Controllers
             return await _mediator.Send(loginCommand);
         }
 
-        [HttpPost("login/linkedin")]
-        public async Task<ActionResult<LoginDto>> LoginLinkedin([FromBody] LinkedInCommand linkedInCommand)
+        [HttpGet("login/linkedin/callback")]
+        public async Task<IActionResult> Callback([FromQuery] string code)
         {
-            return await _mediator.Send(linkedInCommand);
+            var linkedInCommand = new LinkedInCommand { AccessToken = code };
+            var result = await _mediator.Send(linkedInCommand);
+            return Redirect($"{_clienturlSettings.LoginRedirect}?token={result.Token}");
+
         }
 
         [HttpPost("login/google")]

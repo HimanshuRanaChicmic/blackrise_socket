@@ -5,5 +5,6 @@ public class LinkedInSetting
     public string LinkedInRedirectUri { get; set; }
     public string LinkedInClientId { get; set; }
     public string LinkedInClientSecret { get; set; }
-    public string LinkedInUserProfileUrl { get; set; }
+    public string LinkedInOauthUrl { get; set; }
+    public string LinkedUserInfoUrl { get; set; }
 }
