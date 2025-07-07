@@ -9,6 +9,7 @@ using BlackRise.Identity.Persistence.Settings;
 using BlackRise.Identity.Persistence.Utils;
 using Google.Apis.Auth;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json.Linq;
@@ -32,11 +33,12 @@ public class AuthService : IAuthService
     private readonly ClientUrlSetting _clientUrlSettings;
     private readonly LinkedInSetting _linkedInSetting;
     private readonly IHttpWrapper _httpWrapper;
+    private readonly ILogger<AuthService> _logger;
     public AuthService(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager,
         RoleManager<ApplicationRole> roleManager,
         IOptions<JwtSetting> jwtSettings,
         IOptions<AppleSetting> appleSetting,
-        IOptions<ClientUrlSetting> clientUrlSettings, IHttpWrapper httpWrapper, IOptions<LinkedInSetting> linkedInSetting)
+        IOptions<ClientUrlSetting> clientUrlSettings, IHttpWrapper httpWrapper, IOptions<LinkedInSetting> linkedInSetting, ILogger<AuthService> logger) 
     {
         _userManager = userManager;
         _signInManager = signInManager;
@@ -46,10 +48,12 @@ public class AuthService : IAuthService
         _jwtSettings = jwtSettings.Value;
         _linkedInSetting = linkedInSetting.Value;
         _appleSetting = appleSetting.Value;
+        _logger = logger;
     }
 
     public async Task<string> LoginAsync(string username, string password)
     {
+        _logger.LogInformation($"Simple Login");
         var user = await _userManager.FindByEmailAsync(username);
 
         if (user == null || user.IsDeleted)
@@ -522,6 +526,7 @@ public class AuthService : IAuthService
     {
         try
         {
+            _logger.LogInformation($"Verifying Apple ID token: {accessToken}");
             var appleJwt = await VerifyAppleIdTokenAsync(accessToken);
             if (appleJwt == null)
                 throw new UnauthorizedAccessException(Constants.AppleLoginNotVerified);
