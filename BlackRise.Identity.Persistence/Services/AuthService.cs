@@ -53,6 +53,7 @@ public class AuthService : IAuthService
 
     public async Task<string> LoginAsync(string username, string password)
     {
+        _logger.LogInformation($"Simple Login");
         var user = await _userManager.FindByEmailAsync(username);
 
         if (user == null || user.IsDeleted)
