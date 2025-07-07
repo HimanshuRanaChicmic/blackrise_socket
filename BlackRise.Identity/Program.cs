@@ -45,19 +45,19 @@ var urls = (result != null && result.Split(',').Any()) ? result.Split(',') : Arr
 
 var myAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
-builder.Services.AddCors(options =>
-{
-    // allowed all for testing purposes
-    options.AddPolicy("AllowAll",
-                        policy =>
-                        {
-                            //policy.WithOrigins(urls)
-                            policy.AllowAnyOrigin()
-                                  .AllowAnyHeader()
-                                  .AllowAnyMethod();
-                                  //.AllowCredentials();
-                        });
-});
+//builder.Services.AddCors(options =>
+//{
+//    // allowed all for testing purposes
+//    options.AddPolicy("AllowAll",
+//                        policy =>
+//                        {
+//                            //policy.WithOrigins(urls)
+//                            policy.AllowAnyOrigin()
+//                                  .AllowAnyHeader()
+//                                  .AllowAnyMethod();
+//                                  //.AllowCredentials();
+//                        });
+//});
 
 var app = builder.Build();
 
@@ -79,9 +79,28 @@ app.UseStaticFiles();
 app.UseHttpsRedirection();
 
 app.UseRouting();
-// allowed all for testing purposes
-app.UseCors("AllowAll");
+//// allowed all for testing purposes
+//app.UseCors("AllowAll");
+app.Use(async (context, next) =>
+{
+    var origin = context.Request.Headers["Origin"];
+    if (!string.IsNullOrEmpty(origin))
+    {
+        context.Response.Headers.Add("Access-Control-Allow-Origin", origin);
+        context.Response.Headers.Add("Access-Control-Allow-Credentials", "true");
+        context.Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Authorization");
+        context.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
+    }
 
+    // Handle preflight request
+    if (context.Request.Method == "OPTIONS")
+    {
+        context.Response.StatusCode = 204;
+        return;
+    }
+
+    await next();
+});
 app.UseAuthentication();
 app.UseAuthorization();
 
