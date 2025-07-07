@@ -3,9 +3,10 @@ using BlackRise.Identity.Application.Feature.EmailConfirmation.Commands;
 using BlackRise.Identity.Application.Feature.ForgotPassword;
 using BlackRise.Identity.Application.Feature.ForgotPassword.Commands;
 using BlackRise.Identity.Application.Feature.Login;
+using BlackRise.Identity.Application.Feature.Login.Commands.Apple;
 using BlackRise.Identity.Application.Feature.Login.Commands.EmailPassword;
+using BlackRise.Identity.Application.Feature.Login.Commands.Google;
 using BlackRise.Identity.Application.Feature.Login.Commands.LinkedIn;
-using BlackRise.Identity.Application.Feature.Login.Queries.LinkedIn;
 using BlackRise.Identity.Application.Feature.ResendEmailConfirmation;
 using BlackRise.Identity.Application.Feature.ResendEmailConfirmation.Commands;
 using BlackRise.Identity.Application.Feature.ResendResetPassword;
@@ -18,7 +19,6 @@ using BlackRise.Identity.Application.Feature.UpdatePassword;
 using BlackRise.Identity.Application.Feature.UpdatePassword.Commands;
 using BlackRise.Identity.Application.Feature.VerifyResetPasswordCode;
 using BlackRise.Identity.Application.Feature.VerifyResetPasswordCode.Commands;
-using BlackRise.Identity.Persistence.Settings;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -40,37 +40,21 @@ namespace BlackRise.Identity.Controllers
             return await _mediator.Send(loginCommand);
         }
 
-        [HttpGet("linkedIn/callback")]
-        public async Task<IActionResult> LinkedInCallback([FromQuery] string code, [FromQuery] string state)
-        {
-            if (string.IsNullOrEmpty(code))
-            {
-                return BadRequest("Authorization code not found.");
-            }
-
-            try
-            {
-                
-                return Ok(new { accessToken = "" });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Error: {ex.Message}");
-            }
-        }
-
-        [HttpGet("linkedin-url")]
-        public async Task<ActionResult> GetRecommendedGroups()
-        {
-            string response = await _mediator.Send(new GetLinkedInQuery {});
-            return Ok(response);
-        }
-
-
         [HttpPost("login/linkedin")]
         public async Task<ActionResult<LoginDto>> LoginLinkedin([FromBody] LinkedInCommand linkedInCommand)
         {
             return await _mediator.Send(linkedInCommand);
+        }
+
+        [HttpPost("login/google")]
+        public async Task<LoginDto> GoogleLogin([FromBody] GoogleCommand googleCommand)
+        {
+            return await _mediator.Send(googleCommand);
+        }
+        [HttpPost("login/apple")]
+        public async Task<LoginDto> AppleLogin([FromBody] AppleCommand appleCommand)
+        {
+            return await _mediator.Send(appleCommand);
         }
 
         [HttpPost("signup")]

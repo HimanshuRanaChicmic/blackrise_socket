@@ -47,13 +47,15 @@ var myAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy(myAllowSpecificOrigins,
+    // allowed all for testing purposes
+    options.AddPolicy("AllowAll",
                         policy =>
                         {
-                            policy.WithOrigins(urls)
+                            //policy.WithOrigins(urls)
+                            policy.AllowAnyOrigin()
                                   .AllowAnyHeader()
-                                  .AllowAnyMethod()
-                                  .AllowCredentials();
+                                  .AllowAnyMethod();
+                                  //.AllowCredentials();
                         });
 });
 
@@ -77,7 +79,8 @@ app.UseStaticFiles();
 app.UseHttpsRedirection();
 
 app.UseRouting();
-app.UseCors(myAllowSpecificOrigins);
+// allowed all for testing purposes
+app.UseCors("AllowAll");
 
 app.UseAuthentication();
 app.UseAuthorization();
