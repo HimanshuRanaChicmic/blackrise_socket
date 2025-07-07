@@ -2,6 +2,6 @@
 
 namespace BlackRise.Identity.Application.Feature.ForgotPassword;
 
-public class ForgotPasswordDto(string result):BaseResponseDto(result)
+public class ForgotPasswordDto(string result):BaseResponseDto<string>(result)
 {
 }

@@ -1,6 +1,8 @@
 ﻿namespace BlackRise.Identity.Application.DataTransferObject;
 
-public class BaseResponseDto(string result)
+public class BaseResponseDto<T>(T result)
 {
-    public string Result { get; set; } = result;
+    public bool IsSuccess { get; set; } = true;
+    public string Message { get; set; } = string.Empty;
+    public T Result { get; set; } = result;
 }

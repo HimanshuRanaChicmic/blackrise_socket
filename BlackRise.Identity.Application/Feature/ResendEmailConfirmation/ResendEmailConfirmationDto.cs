@@ -2,6 +2,6 @@
 
 namespace BlackRise.Identity.Application.Feature.ResendEmailConfirmation;
 
-public class ResendEmailConfirmationDto(string result):BaseResponseDto(result)
+public class ResendEmailConfirmationDto(string result):BaseResponseDto<string>(result)
 {
 }

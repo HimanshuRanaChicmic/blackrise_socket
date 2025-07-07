@@ -9,4 +9,5 @@ public class ClientUrlSetting
     public string ProfileUrl { get; set; }
     public string EmailConfirmationTokenExpire { get; set; }
     public string ResetPasswordTokenExpire { get; set; }
+    public string LoginRedirect { get; set; }
 }
