@@ -118,6 +118,7 @@ public class AuthService : IAuthService
     public async Task<string> RegisterAsync(SignupCommand signupCommand)
     {
         var existingUser = await _userManager.FindByEmailAsync(signupCommand.Email);
+        var otp = "";
 
         if (existingUser != null && existingUser.EmailConfirmed && existingUser.PasswordHash != null)
             throw new BadRequestException(Constants.EmailAlreadyRegistered);
@@ -127,7 +128,7 @@ public class AuthService : IAuthService
             await UpdateProfileAsync(existingUser, signupCommand);
 
             await SendEmailConfirmationCodeAsync(existingUser);
-
+            otp = existingUser.EmailConfirmationCode;
         }
         else
         {
@@ -154,9 +155,11 @@ public class AuthService : IAuthService
             
             await SendEmailConfirmationCodeAsync(newUser);
             await CreateProfileAsync(newUser, signupCommand);
+            otp = newUser.EmailConfirmationCode;
         }
 
-        return Constants.OtpSentSuccessfully;
+        //return Constants.OtpSentSuccessfully;
+        return $"{Constants.OtpSentSuccessfully}: {otp ?? ""}";
     }
 
     public async Task<Tuple<Guid, string>> UpdateUserPasswordAsync(string email, string password)
@@ -180,26 +183,27 @@ public class AuthService : IAuthService
 
     public async Task<string> EmailConfirmationAsync(string email, string code)
     {
-            var existingUser = await _userManager.FindByEmailAsync(email);
+        var existingUser = await _userManager.FindByEmailAsync(email);
 
-            if (existingUser == null)
-                throw new BadRequestException(Constants.InvalidUserEmail);
+        if (existingUser == null)
+            throw new BadRequestException(Constants.InvalidUserEmail);
 
-            if (existingUser.EmailConfirmationCode != code)
-                throw new BadRequestException(Constants.InvalidOtp);
+        if (existingUser.EmailConfirmationCode != code)
+            throw new BadRequestException(Constants.InvalidOtp);
 
-            if (existingUser.EmailConfirmationCodeExpiry < DateTime.UtcNow)
-                throw new BadRequestException(Constants.OtpExpired);
+        if (existingUser.EmailConfirmationCodeExpiry < DateTime.UtcNow)
+            throw new BadRequestException(Constants.OtpExpired);
 
-            existingUser.EmailConfirmed = true;
-            existingUser.EmailConfirmationCode = null;
-            existingUser.EmailConfirmationCodeExpiry = null;
-            var result = await _userManager.UpdateAsync(existingUser);
+        existingUser.EmailConfirmed = true;
+        existingUser.EmailConfirmationCode = null;
+        existingUser.EmailConfirmationCodeExpiry = null;
+        var result = await _userManager.UpdateAsync(existingUser);
 
-            if (!result.Succeeded)
-                throw new BadRequestException($"Error while confirming user email {result.Errors.First().Description}");
+        if (!result.Succeeded)
+            throw new BadRequestException($"Error while confirming user email {result.Errors.First().Description}");
 
-            return Constants.OtpVerifiedSuccessfully;
+        //return Constants.OtpVerifiedSuccessfully;
+        return $"{Constants.OtpSentSuccessfully}: {existingUser.EmailConfirmationCode}";
 
     }
     public async Task<string> ResendEmailConfirmationAsync(string email)
@@ -211,7 +215,8 @@ public class AuthService : IAuthService
 
         await SendEmailConfirmationCodeAsync(existingUser);
 
-        return Constants.OtpSentSuccessfully;
+        //return Constants.OtpSentSuccessfully;
+        return $"{Constants.OtpSentSuccessfully}: {existingUser.EmailConfirmationCode}";
     }
     public async Task<string> ResendResetPasswordCodeAsync(string email)
     {
@@ -225,7 +230,8 @@ public class AuthService : IAuthService
 
         await SendPasswordResetEmailAsync(existingUser);
 
-        return Constants.OtpSentSuccessfully;
+        //return $"{Constants.OtpSentSuccessfully};
+        return $"{Constants.OtpSentSuccessfully}: {existingUser.EmailConfirmationCode}";
     }
 
 
