@@ -2,7 +2,6 @@
 using BlackRise.Identity.Application.DataTransferObject;
 using BlackRise.Identity.Application.Exceptions;
 using BlackRise.Identity.Application.Feature.Signup.Commands;
-using BlackRise.Identity.Application.Feature.User;
 using BlackRise.Identity.Application.Settings;
 using BlackRise.Identity.Domain;
 using BlackRise.Identity.Domain.Common.Enums;
@@ -152,11 +151,10 @@ public class AuthService : IAuthService
                 throw new BadRequestException($"{Constants.ErrorCreatingUser}: {result.Errors.First().Description}");
 
             _ = await _userManager.AddToRoleAsync(newUser, Role.User.ToString());
-            await CreateProfileAsync(newUser, signupCommand);
-
+            
             await SendEmailConfirmationCodeAsync(newUser);
+            await CreateProfileAsync(newUser, signupCommand);
         }
-
 
         return Constants.OtpSentSuccessfully;
     }
@@ -588,10 +586,11 @@ public class AuthService : IAuthService
 
             if (isApple)
                 await _userManager.AddLoginAsync(user, new UserLoginInfo(provider, providerUserId, provider));
-            else
-                await CreateProfileAsync(user, signupCommand);
 
             await _userManager.AddToRoleAsync(user, Role.User.ToString());
+
+            if(!isApple)
+                await CreateProfileAsync(user, signupCommand);
         }
 
         return await GenerateTokenAsync(user);
