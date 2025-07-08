@@ -61,6 +61,7 @@ public static class PersistenceServiceRegisteration
                 opt.TokenLifespan = TimeSpan.FromMinutes(double.Parse(builder.Configuration.GetSection("ClientUrlSettings:ResetPasswordTokenExpire").Value ?? string.Empty)));
 
         _ = services.AddTransient<IAuthService, AuthService>();
+        _ = services.AddTransient<IUserService, UserService>();
 
         _ = services.AddAuthentication(options =>
         {

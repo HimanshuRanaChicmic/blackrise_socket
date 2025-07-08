@@ -1,8 +1,9 @@
 ﻿namespace BlackRise.Identity.Persistence.Utils
 {
-    public class Constants
+    public static class Constants
     {
         public const string InvalidEmailPassword = "Invalid email/password";
+        public const string UserNotFound = "User not found";
         public const string UserPasswordNotSet = "User password not set. Sign in again.";
         public const string UserAccountDisabled = "User account disabled";
         public const string EmailNotConfirmed = "Email not confirm";

@@ -1,4 +1,5 @@
 ﻿using BlackRise.Identity.Application.Feature.Signup.Commands;
+using BlackRise.Identity.Application.Feature.User;
 
 namespace BlackRise.Identity.Application.Contracts;
 
