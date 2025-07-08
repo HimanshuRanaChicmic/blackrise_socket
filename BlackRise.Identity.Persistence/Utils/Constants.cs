@@ -4,7 +4,7 @@
     {
         public const string InvalidEmailPassword = "Invalid email/password";
         public const string UserNotFound = "User not found";
-        public const string UserPasswordNotSet = "User password not set. Sign in again.";
+        public const string UserPasswordNotSet = "User password not set. Complete Sign-up process.";
         public const string UserAccountDisabled = "User account disabled";
         public const string EmailNotConfirmed = "Email not confirm";
         public const string InvalidUsernamePassword = "Invalid username/password";

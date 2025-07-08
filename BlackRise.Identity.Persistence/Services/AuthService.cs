@@ -121,33 +121,30 @@ public class AuthService : IAuthService
 
         if (existingUser != null && existingUser.EmailConfirmed && existingUser.PasswordHash != null)
             throw new BadRequestException(Constants.EmailAlreadyRegistered);
-
-        var newUser = new ApplicationUser
-        {
-            UserName = signupCommand.Email,
-            NormalizedUserName = signupCommand.Email.ToUpper(),
-            Email = signupCommand.Email,
-            NormalizedEmail = signupCommand.Email.ToUpper(),
-            CreatedDate = DateTime.UtcNow,
-            ModifiedDate = DateTime.UtcNow,
-            IsDeleted = false,
-            IsActive = true,
-            EmailConfirmed = false,
-        };
-        newUser.CreatedBy = newUser.Id;
-        newUser.ModifiedBy = newUser.Id;
-
            
-        if (existingUser != null && !existingUser.EmailConfirmed)
+        if (existingUser != null)
         {
-            newUser.Id = existingUser.Id;
-            await UpdateProfileAsync(newUser, signupCommand);
+            await UpdateProfileAsync(existingUser, signupCommand);
 
             await SendEmailConfirmationCodeAsync(existingUser);
 
         }
         else
         {
+            var newUser = new ApplicationUser
+            {
+                UserName = signupCommand.Email,
+                NormalizedUserName = signupCommand.Email.ToUpper(),
+                Email = signupCommand.Email,
+                NormalizedEmail = signupCommand.Email.ToUpper(),
+                CreatedDate = DateTime.UtcNow,
+                ModifiedDate = DateTime.UtcNow,
+                IsDeleted = false,
+                IsActive = true,
+                EmailConfirmed = false,
+            };
+            newUser.CreatedBy = newUser.Id;
+            newUser.ModifiedBy = newUser.Id;
             var result = await _userManager.CreateAsync(newUser);
 
             if (!result.Succeeded)
