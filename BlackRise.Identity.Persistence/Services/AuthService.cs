@@ -158,7 +158,6 @@ public class AuthService : IAuthService
             otp = newUser.EmailConfirmationCode;
         }
 
-        //return Constants.OtpSentSuccessfully;
         return $"{Constants.OtpSentSuccessfully}: {otp ?? ""}";
     }
 
@@ -202,7 +201,6 @@ public class AuthService : IAuthService
         if (!result.Succeeded)
             throw new BadRequestException($"Error while confirming user email {result.Errors.First().Description}");
 
-        //return Constants.OtpVerifiedSuccessfully;
         return $"{Constants.OtpSentSuccessfully}: {existingUser.EmailConfirmationCode}";
 
     }
@@ -215,7 +213,6 @@ public class AuthService : IAuthService
 
         await SendEmailConfirmationCodeAsync(existingUser);
 
-        //return Constants.OtpSentSuccessfully;
         return $"{Constants.OtpSentSuccessfully}: {existingUser.EmailConfirmationCode}";
     }
     public async Task<string> ResendResetPasswordCodeAsync(string email)
@@ -230,7 +227,6 @@ public class AuthService : IAuthService
 
         await SendPasswordResetEmailAsync(existingUser);
 
-        //return $"{Constants.OtpSentSuccessfully};
         return $"{Constants.OtpSentSuccessfully}: {existingUser.EmailConfirmationCode}";
     }
 
