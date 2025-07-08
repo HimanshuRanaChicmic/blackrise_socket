@@ -28,5 +28,7 @@
         public const string AccountNotCreatedWithApple = "We couldn't create your account with Apple. Please contact support.";
         public const string Success = "Success";
         public const string EmailValidated = "Email ID validated";
+        public const string CouldNotCreateAccount = "Account could not be created.";
+        public const string LoginProviderNotAdded = "Login provider could not be added.";
     }
 }
