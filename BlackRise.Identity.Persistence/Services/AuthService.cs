@@ -59,7 +59,10 @@ public class AuthService : IAuthService
         if (user == null || user.IsDeleted)
             throw new BadRequestException(Constants.InvalidEmailPassword);
 
-        if(user.PasswordHash == null)
+        if(!user.EmailConfirmed)
+            throw new BadRequestException(Constants.EmailNotConfirmed);
+
+        if (user.PasswordHash == null)
             throw new BadRequestException(Constants.UserPasswordNotSet);
 
         if (!user.IsActive)
