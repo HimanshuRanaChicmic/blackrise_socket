@@ -8,6 +8,7 @@ using BlackRise.Identity.Domain.Common.Enums;
 using BlackRise.Identity.Persistence.Settings;
 using BlackRise.Identity.Persistence.Utils;
 using Google.Apis.Auth;
+using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -537,8 +538,10 @@ public class AuthService : IAuthService
             var email = appleJwt.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
             var userId = appleJwt.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
 
-            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(email))
+            if (string.IsNullOrEmpty(userId))
                 throw new UnauthorizedAccessException(Constants.AppleLoginNotVerified);
+
+            email = email ?? $"{userId}@appleid.local";
 
             return await HandleExternalLoginAsync(email, null, null, "Apple", userId, true);
         }
@@ -570,7 +573,7 @@ public class AuthService : IAuthService
             user = new ApplicationUser
             {
                 UserName = email ?? providerUserId,
-                Email = email ?? providerUserId,
+                Email = email ?? "",
                 NormalizedEmail = (email ?? "").ToUpper(),
                 NormalizedUserName = (email ?? "").ToUpper(),
                 EmailConfirmed = true,
@@ -582,12 +585,14 @@ public class AuthService : IAuthService
                 IsProfileCreated = !isApple,
             };
 
-            var result = await _userManager.CreateAsync(user);
-            if (!result.Succeeded)
-                throw new ArgumentException($"Account could not be created.");
+            var createResult = await _userManager.CreateAsync(user);
+            if (!createResult.Succeeded)
+                throw new ArgumentException(Constants.AccountDoesNotExist);
 
-            if (isApple)
-                await _userManager.AddLoginAsync(user, new UserLoginInfo(provider, providerUserId, provider));
+            var loginInfo = new UserLoginInfo(provider, providerUserId, provider);
+            var loginResult = await _userManager.AddLoginAsync(user, loginInfo);
+            if (!loginResult.Succeeded)
+                throw new ArgumentException(Constants.LoginProviderNotAdded);
 
             await _userManager.AddToRoleAsync(user, Role.User.ToString());
 
