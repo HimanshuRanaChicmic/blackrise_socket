@@ -16,8 +16,8 @@
         public const string AccountDoesNotExist = "Account does not exist.";
         public const string InvalidCode = "Invalid code";
         public const string CodeExpired = "Code has expired";
-        public const string ErrorCreatingUser = "Error while creating user";
-        public const string PasswordUpdated = "Password updated successfully";
+        public const string ErrorCreatingUser = "Failed to create account. Please try again.";
+        public const string PasswordUpdated = "Password set successfully.";
         public const string DifferentNewPassword = "New password must be different from the previous one. Please choose a new password.";
         public const string AppleLoginNotVerified = "Your Apple login could not be verified. Please try again.";
         public const string GoogleLoginNotVerified = "Your Google login could not be verified. Please try again.";
@@ -26,5 +26,6 @@
         public const string AccountNotCreatedWithLinkedIn = "We couldn't create your account with LinkedIn. Please contact support.";
         public const string AccountNotCreatedWithApple = "We couldn't create your account with Apple. Please contact support.";
         public const string Success = "Success";
+        public const string EmailValidated = "Email ID validated";
     }
 }

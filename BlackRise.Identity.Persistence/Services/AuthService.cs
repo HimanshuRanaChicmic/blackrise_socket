@@ -229,6 +229,8 @@ public class AuthService : IAuthService
         return Constants.OtpSentSuccessfully;
     }
 
+
+
     private async Task CreateProfileAsync(ApplicationUser existingUser, SignupCommand? signupCommand = null)
     {
         var profileUrl = string.Concat(_clientUrlSettings.ProfileUrl, "/api/profiles/create-profile");
@@ -303,7 +305,7 @@ public class AuthService : IAuthService
         if (!result.Succeeded)
             throw new BadRequestException($"Error while confirm user email {result.Errors.First().Description}");
 
-        return Constants.Success;
+        return Constants.EmailValidated;
     }
 
 
