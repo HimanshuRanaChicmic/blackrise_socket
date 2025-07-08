@@ -2,6 +2,7 @@
 using BlackRise.Identity.Application.DataTransferObject;
 using BlackRise.Identity.Application.Exceptions;
 using BlackRise.Identity.Application.Feature.Signup.Commands;
+using BlackRise.Identity.Application.Feature.User;
 using BlackRise.Identity.Application.Settings;
 using BlackRise.Identity.Domain;
 using BlackRise.Identity.Domain.Common.Enums;
@@ -536,10 +537,10 @@ public class AuthService : IAuthService
             var email = appleJwt.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
             var userId = appleJwt.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
 
-            if (string.IsNullOrEmpty(userId))
+            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(email))
                 throw new UnauthorizedAccessException(Constants.AppleLoginNotVerified);
 
-            return await HandleExternalLoginAsync(email, null, null, "Apple", userId);
+            return await HandleExternalLoginAsync(email, null, null, "Apple", userId, true);
         }
         catch (InvalidJwtException ex)
         {
@@ -548,7 +549,7 @@ public class AuthService : IAuthService
     }
 
 
-    private async Task<string> HandleExternalLoginAsync(string? email, string? firstName, string? lastName, string? provider = null, string? providerUserId = null)
+    private async Task<string> HandleExternalLoginAsync(string email, string? firstName, string? lastName, string? provider = null, string? providerUserId = null, bool isApple = false)
     {
         ApplicationUser? user;
 
@@ -561,7 +562,7 @@ public class AuthService : IAuthService
         {
             var signupCommand = new SignupCommand
             {
-                FirstName = string.IsNullOrWhiteSpace(firstName) ? "AppleUser" : firstName,
+                FirstName = firstName ?? "",
                 LastName = lastName ?? "",
                 IsReceiveBlackRiseEmails = false,
                 IsReconnectWithEmail = false,
@@ -576,19 +577,20 @@ public class AuthService : IAuthService
                 IsActive = true,
                 IsDeleted = false,
                 CreatedDate = DateTime.UtcNow,
-                ModifiedDate = DateTime.UtcNow
+                ModifiedDate = DateTime.UtcNow,
+                AppleId = isApple ? providerUserId : null,
+                IsProfileCreated = !isApple,
             };
 
             var result = await _userManager.CreateAsync(user);
             if (!result.Succeeded)
                 throw new ArgumentException($"Account could not be created.");
 
-            if (!string.IsNullOrEmpty(provider))
-            {
+            if (isApple)
                 await _userManager.AddLoginAsync(user, new UserLoginInfo(provider, providerUserId, provider));
-            }
+            else
+                await CreateProfileAsync(user, signupCommand);
 
-            await CreateProfileAsync(user, signupCommand);
             await _userManager.AddToRoleAsync(user, Role.User.ToString());
         }
 
