@@ -637,6 +637,8 @@ public class AuthService : IAuthService
             Email = user.Email,
             UserId = user.Id,
             AppleId = user.AppleId,
+            FirstName = firstName,
+            LastName = lastName
         };
         return loginDto;
     }
