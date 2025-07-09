@@ -14,6 +14,6 @@ public class LinkedInCommandHandler : IRequestHandler<LinkedInCommand, LoginDto>
     public async Task<LoginDto> Handle(LinkedInCommand request, CancellationToken cancellationToken)
     {
         var loginResult = await _authService.LoginWithLinkedInAsync(request.AccessToken);
-        return new LoginDto(loginResult);
+        return loginResult;
     }
 }

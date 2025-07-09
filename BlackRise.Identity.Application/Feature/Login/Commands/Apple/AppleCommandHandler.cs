@@ -14,7 +14,7 @@ namespace BlackRise.Identity.Application.Feature.Login.Commands.Apple
         public async Task<LoginDto> Handle(AppleCommand request, CancellationToken cancellationToken)
         {
             var loginResult = await _authService.LoginWithAppleAsync(request.AccessToken);
-            return new LoginDto(loginResult);
+            return loginResult;
         }
     }
 }

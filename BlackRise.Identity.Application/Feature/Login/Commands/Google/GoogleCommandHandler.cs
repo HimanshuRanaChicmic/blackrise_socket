@@ -14,7 +14,7 @@ namespace BlackRise.Identity.Application.Feature.Login.Commands.Google
         public async Task<LoginDto> Handle(GoogleCommand request, CancellationToken cancellationToken)
         {
             var loginResult = await _authService.LoginWithGoogleAsync(request.AccessToken);
-            return new LoginDto(loginResult);
+            return loginResult;
         }
     }
 }
