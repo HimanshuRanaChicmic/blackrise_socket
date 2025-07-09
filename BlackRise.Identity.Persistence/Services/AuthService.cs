@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
@@ -33,13 +34,16 @@ public class AuthService : IAuthService
     private readonly AppleSetting _appleSetting;
     private readonly ClientUrlSetting _clientUrlSettings;
     private readonly LinkedInSetting _linkedInSetting;
+    private readonly GoogleSetting _googleSetting;
     private readonly IHttpWrapper _httpWrapper;
     private readonly ILogger<AuthService> _logger;
     public AuthService(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager,
         RoleManager<ApplicationRole> roleManager,
         IOptions<JwtSetting> jwtSettings,
         IOptions<AppleSetting> appleSetting,
-        IOptions<ClientUrlSetting> clientUrlSettings, IHttpWrapper httpWrapper, IOptions<LinkedInSetting> linkedInSetting, ILogger<AuthService> logger) 
+        IOptions<ClientUrlSetting> clientUrlSettings, IHttpWrapper httpWrapper, 
+        IOptions<LinkedInSetting> linkedInSetting, ILogger<AuthService> logger,
+        IOptions<GoogleSetting> googleSetting) 
     {
         _userManager = userManager;
         _signInManager = signInManager;
@@ -48,6 +52,7 @@ public class AuthService : IAuthService
         _httpWrapper = httpWrapper;
         _jwtSettings = jwtSettings.Value;
         _linkedInSetting = linkedInSetting.Value;
+        _googleSetting = googleSetting.Value;
         _appleSetting = appleSetting.Value;
         _logger = logger;
     }
@@ -435,26 +440,45 @@ public class AuthService : IAuthService
 
         return result;
     }
-
     public async Task<string> LoginWithGoogleAsync(string accessToken)
     {
         try
         {
-            var payload = await GoogleJsonWebSignature.ValidateAsync(accessToken);
-            if (payload == null)
+            using var client = new HttpClient();
+
+            var tokenValidationResponse = await client.GetAsync($"{_googleSetting.GoogleOauthUrl}{accessToken}");
+            tokenValidationResponse.EnsureSuccessStatusCode();
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            var userInfoResponse = await client.GetAsync(_googleSetting.GoogleUserInfoUrl);
+            userInfoResponse.EnsureSuccessStatusCode();
+
+            var json = await userInfoResponse.Content.ReadAsStringAsync();
+            if (string.IsNullOrWhiteSpace(json))
                 throw new UnauthorizedAccessException(Constants.GoogleLoginNotVerified);
 
-            return await HandleExternalLoginAsync(payload.Email, payload.GivenName, payload.FamilyName);
-        }
-        catch (InvalidJwtException ex)
-        {
-            throw new UnauthorizedAccessException(Constants.GoogleLoginNotVerified, ex);
+            dynamic userInfo = JsonConvert.DeserializeObject(json);
+            string? email = userInfo?.email;
+            string? fullName = userInfo?.given_name;
+            string? firstName = null, lastName = null;
+
+            if (!string.IsNullOrWhiteSpace(fullName))
+            {
+                var nameParts = fullName.Trim().Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
+                firstName = nameParts.ElementAtOrDefault(0);
+                lastName = nameParts.ElementAtOrDefault(1);
+            }
+            if (string.IsNullOrWhiteSpace(email))
+                throw new UnauthorizedAccessException(Constants.GoogleLoginNotVerified);
+
+            return await HandleExternalLoginAsync(email, firstName, lastName);
         }
         catch (Exception ex)
         {
-            throw new Exception(Constants.GoogleLoginNotVerified, ex);
+            throw new UnauthorizedAccessException(Constants.GoogleLoginNotVerified, ex);
         }
     }
+
 
     public async Task<string> LoginWithLinkedInAsync(string code)
     {
@@ -511,7 +535,7 @@ public class AuthService : IAuthService
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         client.DefaultRequestHeaders.Add("X-Restli-Protocol-Version", "2.0.0");
 
-        var response = await client.GetAsync(_linkedInSetting.LinkedUserInfoUrl);
+        var response = await client.GetAsync(_linkedInSetting.LinkedInUserInfoUrl);
         var content = await response.Content.ReadAsStringAsync();
         var userInfo = JsonDocument.Parse(content);
 
