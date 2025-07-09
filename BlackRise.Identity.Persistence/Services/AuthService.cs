@@ -1,6 +1,7 @@
 ﻿using BlackRise.Identity.Application.Contracts;
 using BlackRise.Identity.Application.DataTransferObject;
 using BlackRise.Identity.Application.Exceptions;
+using BlackRise.Identity.Application.Feature.Login;
 using BlackRise.Identity.Application.Feature.Signup.Commands;
 using BlackRise.Identity.Application.Settings;
 using BlackRise.Identity.Domain;
@@ -57,7 +58,7 @@ public class AuthService : IAuthService
         _logger = logger;
     }
 
-    public async Task<string> LoginAsync(string username, string password)
+    public async Task<LoginDto> LoginAsync(string username, string password)
     {
         _logger.LogInformation($"Simple Login");
         var user = await _userManager.FindByEmailAsync(username);
@@ -84,7 +85,13 @@ public class AuthService : IAuthService
 
         string token = await GenerateTokenAsync(user);
 
-        return token;
+        var loginDto = new LoginDto(token)
+        {
+            Email = user.Email,
+            UserId = user.Id,
+            AppleId = user.AppleId,
+        };
+        return loginDto;
     }
 
     public async Task<string> RegisterAsync(string username, string password)
@@ -440,7 +447,7 @@ public class AuthService : IAuthService
 
         return result;
     }
-    public async Task<string> LoginWithGoogleAsync(string accessToken)
+    public async Task<LoginDto> LoginWithGoogleAsync(string accessToken)
     {
         try
         {
@@ -480,7 +487,7 @@ public class AuthService : IAuthService
     }
 
 
-    public async Task<string> LoginWithLinkedInAsync(string code)
+    public async Task<LoginDto> LoginWithLinkedInAsync(string code)
     {
         try
         {
@@ -550,7 +557,7 @@ public class AuthService : IAuthService
             Email = email ?? ""
         };
     }
-    public async Task<string> LoginWithAppleAsync(string accessToken)
+    public async Task<LoginDto> LoginWithAppleAsync(string accessToken)
     {
         try
         {
@@ -576,7 +583,7 @@ public class AuthService : IAuthService
     }
 
 
-    private async Task<string> HandleExternalLoginAsync(string email, string? firstName, string? lastName, string? provider = null, string? providerUserId = null, bool isApple = false)
+    private async Task<LoginDto> HandleExternalLoginAsync(string email, string? firstName, string? lastName, string? provider = null, string? providerUserId = null, bool isApple = false)
     {
         ApplicationUser? user;
 
@@ -624,7 +631,14 @@ public class AuthService : IAuthService
                 await CreateProfileAsync(user, signupCommand);
         }
 
-        return await GenerateTokenAsync(user);
+        var token = await GenerateTokenAsync(user);
+        var loginDto = new LoginDto(token)
+        {
+            Email = user.Email,
+            UserId = user.Id,
+            AppleId = user.AppleId,
+        };
+        return loginDto;
     }
     public async Task<JwtSecurityToken> VerifyAppleIdTokenAsync(string accessToken)
     {
