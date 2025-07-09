@@ -69,7 +69,10 @@ public class AuthService : IAuthService
         if(!user.EmailConfirmed)
             throw new BadRequestException(Constants.EmailNotConfirmed);
 
-        if (user.PasswordHash == null)
+        if(user.IsSocialLogin)
+            throw new BadRequestException(Constants.UserAlreadyRegisteredWithSocialLogin);
+
+        if (user.PasswordHash == null && !user.IsSocialLogin)
             throw new BadRequestException(Constants.UserPasswordNotSet);
 
         if (!user.IsActive)
@@ -138,9 +141,16 @@ public class AuthService : IAuthService
            
         if (existingUser != null)
         {
-            await UpdateProfileAsync(existingUser, signupCommand);
-
-            await SendEmailConfirmationCodeAsync(existingUser);
+            if (existingUser.IsSocialLogin && !existingUser.IsProfileCreated)
+            {
+                await CreateProfileAsync(existingUser, signupCommand);
+                return Constants.ProfileCreatedSuccessfully;
+            }
+            else
+            {
+                await SendEmailConfirmationCodeAsync(existingUser);
+                await UpdateProfileAsync(existingUser, signupCommand);
+            }
             otp = existingUser.EmailConfirmationCode;
         }
         else
@@ -156,6 +166,8 @@ public class AuthService : IAuthService
                 IsDeleted = false,
                 IsActive = true,
                 EmailConfirmed = false,
+                IsProfileCreated = true,
+                IsSocialLogin = false
             };
             newUser.CreatedBy = newUser.Id;
             newUser.ModifiedBy = newUser.Id;
@@ -613,7 +625,8 @@ public class AuthService : IAuthService
                 CreatedDate = DateTime.UtcNow,
                 ModifiedDate = DateTime.UtcNow,
                 AppleId = isApple ? providerUserId : null,
-                IsProfileCreated = !isApple,
+                IsProfileCreated = false,
+                IsSocialLogin = true,
             };
 
             var createResult = await _userManager.CreateAsync(user);
@@ -627,8 +640,8 @@ public class AuthService : IAuthService
 
             await _userManager.AddToRoleAsync(user, Role.User.ToString());
 
-            if(!isApple)
-                await CreateProfileAsync(user, signupCommand);
+            //if(!isApple)
+            //    await CreateProfileAsync(user, signupCommand);
         }
 
         var token = await GenerateTokenAsync(user);

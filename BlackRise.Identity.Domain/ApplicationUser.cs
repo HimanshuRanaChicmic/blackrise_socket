@@ -18,5 +18,6 @@ public class ApplicationUser : IdentityUser<Guid>
     public bool IsDeleted { get; set; }
     public string? AppleId { get; set; }
     public bool IsProfileCreated { get; set; }
+    public bool IsSocialLogin { get; set; }
     public ICollection<ApplicationUserRole> UserRoles { get; set; }
 }
