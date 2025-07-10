@@ -628,6 +628,11 @@ public class AuthService : IAuthService
 
             await _userManager.AddToRoleAsync(user, Role.User.ToString());
         }
+        else
+        {
+            if(!user.IsSocialLogin)
+                throw new BadRequestException(Constants.EmailAlreadyRegistered);
+        }
 
         var token = await GenerateTokenAsync(user);
         var loginDto = new LoginDto(token)
