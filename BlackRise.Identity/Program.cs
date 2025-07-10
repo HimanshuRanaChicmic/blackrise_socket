@@ -21,25 +21,20 @@ var dbPass = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "";
 string defaultConnStr = $"Host={dbHost};Database={dbName};Username={dbUser};Password={dbPass}";
 
 // Log all DB env variables for testing
-Console.WriteLine($"DB_HOST: {dbHost}");
-Console.WriteLine($"DB_NAME: {dbName}");
-Console.WriteLine($"DB_USERNAME: {dbUser}");
-Console.WriteLine($"DB_PASSWORD: {dbPass}");
+Console.WriteLine($"DefaultConnectionString: {defaultConnStr}");
 
-// Log all Email env variables for testing
-Console.WriteLine($"EMAIL_PASSWORD: {Environment.GetEnvironmentVariable("EMAIL_PASSWORD")}");
-Console.WriteLine($"EMAIL_HOST: {Environment.GetEnvironmentVariable("EMAIL_HOST")}");
-Console.WriteLine($"EMAIL_PORT: {Environment.GetEnvironmentVariable("EMAIL_PORT")}");
+builder.Configuration["ConnectionStrings:DefaultConnectionString"] = defaultConnStr;
 
-// Log all LinkedIn env variables for testing
-Console.WriteLine($"LINKEDIN_CLIENT_ID: {Environment.GetEnvironmentVariable("LINKEDIN_CLIENT_ID")}");
-Console.WriteLine($"LINKEDIN_CLIENT_SECRET: {Environment.GetEnvironmentVariable("LINKEDIN_CLIENT_SECRET")}");
+builder.Configuration["EmailSettings:Password"] = Environment.GetEnvironmentVariable("EMAIL_PASSWORD");
+builder.Configuration["EmailSettings:Host"] = Environment.GetEnvironmentVariable("EMAIL_HOST");
+builder.Configuration["EmailSettings:Port"] = Environment.GetEnvironmentVariable("EMAIL_PORT");
 
-// Log all JWT env variables for testing
-Console.WriteLine($"JWT_KEY: {Environment.GetEnvironmentVariable("JWT_KEY")}");
-Console.WriteLine($"JWT_LINKEDIN_CLIENT_ID: {Environment.GetEnvironmentVariable("JWT_LINKEDIN_CLIENT_ID")}");
+builder.Configuration["LinkedInSetting:LinkedInClientId"] = Environment.GetEnvironmentVariable("LINKEDIN_CLIENT_ID");
+builder.Configuration["LinkedInSetting:LinkedInClientSecret"] = Environment.GetEnvironmentVariable("LINKEDIN_CLIENT_SECRET");
 
-Console.WriteLine($"JWT_LINKEDIN_CLIENT_SECRET: {Environment.GetEnvironmentVariable("JWT_LINKEDIN_CLIENT_SECRET")}");
+builder.Configuration["JwtSettings:Key"] = Environment.GetEnvironmentVariable("JWT_KEY");
+builder.Configuration["JwtSettings:LinkedInClientId"] = Environment.GetEnvironmentVariable("JWT_LINKEDIN_CLIENT_ID");
+builder.Configuration["JwtSettings:LinkedInClientSecret"] = Environment.GetEnvironmentVariable("JWT_LINKEDIN_CLIENT_SECRET");
 
 
 builder.Services.AddControllers(options =>
