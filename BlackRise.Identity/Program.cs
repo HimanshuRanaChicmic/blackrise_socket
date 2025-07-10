@@ -20,7 +20,26 @@ var dbPass = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "";
 
 string defaultConnStr = $"Host={dbHost};Database={dbName};Username={dbUser};Password={dbPass}";
 
-Console.WriteLine($"Fetching secrets: {defaultConnStr}");
+// Log all DB env variables for testing
+Console.WriteLine($"DB_HOST: {dbHost}");
+Console.WriteLine($"DB_NAME: {dbName}");
+Console.WriteLine($"DB_USERNAME: {dbUser}");
+Console.WriteLine($"DB_PASSWORD: {dbPass}");
+
+// Log all Email env variables for testing
+Console.WriteLine($"EMAIL_PASSWORD: {Environment.GetEnvironmentVariable("EMAIL_PASSWORD")}");
+Console.WriteLine($"EMAIL_HOST: {Environment.GetEnvironmentVariable("EMAIL_HOST")}");
+Console.WriteLine($"EMAIL_PORT: {Environment.GetEnvironmentVariable("EMAIL_PORT")}");
+
+// Log all LinkedIn env variables for testing
+Console.WriteLine($"LINKEDIN_CLIENT_ID: {Environment.GetEnvironmentVariable("LINKEDIN_CLIENT_ID")}");
+Console.WriteLine($"LINKEDIN_CLIENT_SECRET: {Environment.GetEnvironmentVariable("LINKEDIN_CLIENT_SECRET")}");
+
+// Log all JWT env variables for testing
+Console.WriteLine($"JWT_KEY: {Environment.GetEnvironmentVariable("JWT_KEY")}");
+Console.WriteLine($"JWT_LINKEDIN_CLIENT_ID: {Environment.GetEnvironmentVariable("JWT_LINKEDIN_CLIENT_ID")}");
+Console.WriteLine($"JWT_LINKEDIN_CLIENT_SECRET: {Environment.GetEnvironmentVariable("JWT_LINKEDIN_CLIENT_SECRET")}");
+
 
 builder.Services.AddControllers(options =>
 {
