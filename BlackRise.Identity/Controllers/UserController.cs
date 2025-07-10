@@ -22,7 +22,7 @@ namespace BlackRise.Identity.Controllers
         }
 
         [HttpPost("profile-status")]
-        public async Task<ActionResult<UserDto>> UpdateProfileStats([FromBody] ProfileStatusCommand command)
+        public async Task<ActionResult<UserDto>> UpdateProfileStatus([FromBody] ProfileStatusCommand command)
         {
             return Ok(await _mediator.Send(command));
         }
