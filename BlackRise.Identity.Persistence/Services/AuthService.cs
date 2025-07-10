@@ -606,13 +606,6 @@ public class AuthService : IAuthService
 
         if (user == null)
         {
-            var signupCommand = new SignupCommand
-            {
-                FirstName = firstName ?? "",
-                LastName = lastName ?? "",
-                IsReceiveBlackRiseEmails = false,
-                IsReconnectWithEmail = false,
-            };
             user = new ApplicationUser
             {
                 UserName = email ?? providerUserId,
