@@ -8,4 +8,5 @@ public class LoginDto(string token)
     public string? AppleId { get; set; }
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
+    public bool? IsProfileCreated { get; set; }
 }
