@@ -8,6 +8,10 @@ public class UserRoleConfiguration : IEntityTypeConfiguration<ApplicationUserRol
 {
     public void Configure(EntityTypeBuilder<ApplicationUserRole> builder)
     {
+        builder
+            .HasIndex(ur => new { ur.UserId, ur.RoleId })
+            .IsUnique();
+            
         builder.HasData(new ApplicationUserRole
         {
             RoleId = Guid.Parse("c8347abf-f51e-4dda-ba8d-2b3393a4aa63"),

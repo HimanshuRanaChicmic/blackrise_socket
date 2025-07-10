@@ -9,6 +9,8 @@ public class UserConfiguration : IEntityTypeConfiguration<ApplicationUser>
 {
     public void Configure(EntityTypeBuilder<ApplicationUser> builder)
     {
+        builder.HasIndex(i => i.Email).IsUnique();
+
         ApplicationUser superAdmin = new()
         {
             Id = Guid.Parse("912c3a8a-d59d-4b7d-876a-3dd93a21c461"),
