@@ -1,123 +1,83 @@
 {
-  "family": "tbr-security-service-dev",
-  "containerDefinitions": [
-    {
-      "name": "security-service",
-      "image": "893085071144.dkr.ecr.eu-west-2.amazonaws.com/tbr-security-service-dev:latest",
-      "cpu": 0,
-      "portMappings": [
+    "family": "tbr-security-service-dev",
+    "containerDefinitions": [
         {
-          "name": "security-service",
-          "containerPort": 8080,
-          "hostPort": 8080,
-          "protocol": "tcp"
+            "name": "security-service",
+            "image": "893085071144.dkr.ecr.eu-west-2.amazonaws.com/tbr-security-service-dev:latest",
+            "cpu": 0,
+            "portMappings": [
+                {
+                    "name": "security-service",
+                    "containerPort": 8080,
+                    "hostPort": 8080,
+                    "protocol": "tcp"
+                }
+            ],
+            "essential": true,
+            "environment": [],
+            "mountPoints": [],
+            "volumesFrom": [],
+            "secrets": [
+                {
+                    "name": "DB_USERNAME",
+                    "valueFrom": "arn:aws:secretsmanager:eu-west-2:893085071144:secret:tbr-aurora-postgres-db-user-dev-043itb"
+                },
+                {
+                    "name": "DB_PASSWORD",
+                    "valueFrom": "arn:aws:secretsmanager:eu-west-2:893085071144:secret:tbr-aurora-postgres-db-password-dev-5u8RAp"
+                }
+            ],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/tbr-security-service-dev",
+                    "awslogs-region": "eu-west-2",
+                    "awslogs-stream-prefix": "ecs"
+                }
+            },
+            "systemControls": []
+        },
+        {
+            "name": "security-service-xray-daemon",
+            "image": "amazon/aws-xray-daemon",
+            "cpu": 32,
+            "memoryReservation": 256,
+            "portMappings": [
+                {
+                    "containerPort": 2000,
+                    "hostPort": 2000,
+                    "protocol": "udp"
+                }
+            ],
+            "essential": false,
+            "environment": [],
+            "mountPoints": [],
+            "volumesFrom": [],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/tbr-security-service-dev",
+                    "awslogs-region": "eu-west-2",
+                    "awslogs-stream-prefix": "xray"
+                }
+            },
+            "systemControls": []
         }
-      ],
-      "essential": true,
-      "environment": [],
-      "mountPoints": [],
-      "volumesFrom": [],
-      "secrets": [
+    ],
+    "taskRoleArn": "arn:aws:iam::893085071144:role/tbr-ecs-task-role-dev",
+    "executionRoleArn": "arn:aws:iam::893085071144:role/tbr-ecs-task-execution-role-dev",
+    "networkMode": "awsvpc",
+    "volumes": [],
+    "placementConstraints": [],
+    "requiresCompatibilities": [
+        "FARGATE"
+    ],
+    "cpu": "256",
+    "memory": "512",
+    "tags": [
         {
-          "name": "DB_HOST",
-          "valueFrom": "arn:aws:secretsmanager:eu-west-2:893085071144:secret:securityServiceEnv-ineDdw:DB_HOST:AWSCURRENT:"
-        },
-        {
-          "name": "DB_NAME",
-          "valueFrom": "arn:aws:secretsmanager:eu-west-2:893085071144:secret:securityServiceEnv-ineDdw:DB_NAME:AWSCURRENT:"
-        },
-        {
-          "name": "DB_USERNAME",
-          "valueFrom": "arn:aws:secretsmanager:eu-west-2:893085071144:secret:securityServiceEnv-ineDdw:DB_USERNAME:AWSCURRENT:"
-        },
-        {
-          "name": "DB_PASSWORD",
-          "valueFrom": "arn:aws:secretsmanager:eu-west-2:893085071144:secret:securityServiceEnv-ineDdw:DB_PASSWORD:AWSCURRENT:"
-        },
-        {
-          "name": "EMAIL_PASSWORD",
-          "valueFrom": "arn:aws:secretsmanager:eu-west-2:893085071144:secret:securityServiceEnv-ineDdw:EMAIL_PASSWORD:AWSCURRENT:"
-        },
-        {
-          "name": "EMAIL_HOST",
-          "valueFrom": "arn:aws:secretsmanager:eu-west-2:893085071144:secret:securityServiceEnv-ineDdw:EMAIL_HOST:AWSCURRENT:"
-        },
-        {
-          "name": "EMAIL_PORT",
-          "valueFrom": "arn:aws:secretsmanager:eu-west-2:893085071144:secret:securityServiceEnv-ineDdw:EMAIL_PORT:AWSCURRENT:"
-        },
-        {
-          "name": "LINKEDIN_CLIENT_ID",
-          "valueFrom": "arn:aws:secretsmanager:eu-west-2:893085071144:secret:securityServiceEnv-ineDdw:LINKEDIN_CLIENT_ID:AWSCURRENT:"
-        },
-        {
-          "name": "LINKEDIN_CLIENT_SECRET",
-          "valueFrom": "arn:aws:secretsmanager:eu-west-2:893085071144:secret:securityServiceEnv-ineDdw:LINKEDIN_CLIENT_SECRET:AWSCURRENT:"
-        },
-        {
-          "name": "JWT_KEY",
-          "valueFrom": "arn:aws:secretsmanager:eu-west-2:893085071144:secret:securityServiceEnv-ineDdw:JWT_KEY:AWSCURRENT:"
-        },
-        {
-          "name": "JWT_LINKEDIN_CLIENT_ID",
-          "valueFrom": "arn:aws:secretsmanager:eu-west-2:893085071144:secret:securityServiceEnv-ineDdw:JWT_LINKEDIN_CLIENT_ID:AWSCURRENT:"
-        },
-        {
-          "name": "JWT_LINKEDIN_CLIENT_SECRET",
-          "valueFrom": "arn:aws:secretsmanager:eu-west-2:893085071144:secret:securityServiceEnv-ineDdw:JWT_LINKEDIN_CLIENT_SECRET:AWSCURRENT:"
+            "key": "Environment",
+            "value": "dev"
         }
-      ],
-      "logConfiguration": {
-        "logDriver": "awslogs",
-        "options": {
-          "awslogs-group": "/ecs/tbr-security-service-dev",
-          "awslogs-region": "eu-west-2",
-          "awslogs-stream-prefix": "ecs"
-        }
-      },
-      "systemControls": []
-    },
-    {
-      "name": "security-service-xray-daemon",
-      "image": "amazon/aws-xray-daemon",
-      "cpu": 32,
-      "memoryReservation": 256,
-      "portMappings": [
-        {
-          "containerPort": 2000,
-          "hostPort": 2000,
-          "protocol": "udp"
-        }
-      ],
-      "essential": false,
-      "environment": [],
-      "mountPoints": [],
-      "volumesFrom": [],
-      "logConfiguration": {
-        "logDriver": "awslogs",
-        "options": {
-          "awslogs-group": "/ecs/tbr-security-service-dev",
-          "awslogs-region": "eu-west-2",
-          "awslogs-stream-prefix": "xray"
-        }
-      },
-      "systemControls": []
-    }
-  ],
-  "taskRoleArn": "arn:aws:iam::893085071144:role/tbr-ecs-task-role-dev",
-  "executionRoleArn": "arn:aws:iam::893085071144:role/tbr-ecs-task-execution-role-dev",
-  "networkMode": "awsvpc",
-  "volumes": [],
-  "placementConstraints": [],
-  "requiresCompatibilities": [
-    "FARGATE"
-  ],
-  "cpu": "256",
-  "memory": "512",
-  "tags": [
-    {
-      "key": "Environment",
-      "value": "dev"
-    }
-  ]
+    ]
 }
