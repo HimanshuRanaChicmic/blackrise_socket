@@ -628,6 +628,9 @@ public class AuthService : IAuthService
                 IsProfileCreated = false,
                 IsSocialLogin = true,
             };
+            var createResult = await _userManager.CreateAsync(user);
+            if (!createResult.Succeeded)
+                throw new ArgumentException(Constants.AccountDoesNotExist);
 
             if (isApple)
             {
@@ -635,12 +638,6 @@ public class AuthService : IAuthService
                 var loginResult = await _userManager.AddLoginAsync(user, loginInfo);
                 if (!loginResult.Succeeded)
                     throw new ArgumentException(Constants.LoginProviderNotAdded);
-            }
-            else
-            {
-                var createResult = await _userManager.CreateAsync(user);
-                if (!createResult.Succeeded)
-                    throw new ArgumentException(Constants.AccountDoesNotExist);
             }
 
             await _userManager.AddToRoleAsync(user, Role.User.ToString());
