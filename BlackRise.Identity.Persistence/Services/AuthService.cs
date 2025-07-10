@@ -629,14 +629,19 @@ public class AuthService : IAuthService
                 IsSocialLogin = true,
             };
 
-            var createResult = await _userManager.CreateAsync(user);
-            if (!createResult.Succeeded)
-                throw new ArgumentException(Constants.AccountDoesNotExist);
-
-            var loginInfo = new UserLoginInfo(provider, providerUserId, provider);
-            var loginResult = await _userManager.AddLoginAsync(user, loginInfo);
-            if (!loginResult.Succeeded)
-                throw new ArgumentException(Constants.LoginProviderNotAdded);
+            if (isApple)
+            {
+                var loginInfo = new UserLoginInfo(provider, providerUserId, provider);
+                var loginResult = await _userManager.AddLoginAsync(user, loginInfo);
+                if (!loginResult.Succeeded)
+                    throw new ArgumentException(Constants.LoginProviderNotAdded);
+            }
+            else
+            {
+                var createResult = await _userManager.CreateAsync(user);
+                if (!createResult.Succeeded)
+                    throw new ArgumentException(Constants.AccountDoesNotExist);
+            }
 
             await _userManager.AddToRoleAsync(user, Role.User.ToString());
         }
