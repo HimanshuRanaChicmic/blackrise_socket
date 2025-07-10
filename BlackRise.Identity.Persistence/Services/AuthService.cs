@@ -135,8 +135,8 @@ public class AuthService : IAuthService
         var existingUser = await _userManager.FindByEmailAsync(signupCommand.Email);
         var otp = "";
 
-        if (existingUser != null && existingUser.EmailConfirmed && existingUser.PasswordHash != null)
-            throw new BadRequestException(Constants.EmailAlreadyRegistered);
+        if (existingUser != null && existingUser.EmailConfirmed && existingUser.PasswordHash == null)
+            throw new BadRequestException(Constants.UserAlreadyRegisteredWithSocialLogin);
            
         if (existingUser != null)
         {
