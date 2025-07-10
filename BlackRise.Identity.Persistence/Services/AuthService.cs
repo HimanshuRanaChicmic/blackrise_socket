@@ -9,7 +9,6 @@ using BlackRise.Identity.Domain.Common.Enums;
 using BlackRise.Identity.Persistence.Settings;
 using BlackRise.Identity.Persistence.Utils;
 using Google.Apis.Auth;
-using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -308,7 +307,7 @@ public class AuthService : IAuthService
 
         await SendPasswordResetEmailAsync(existingUser);
 
-        return "OTP sent successfully.";
+        return Constants.OtpSentSuccessfully;
     }
 
     public async Task<string> ResetConfirmationAsync(string email, string code)
