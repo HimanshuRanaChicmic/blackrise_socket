@@ -477,15 +477,9 @@ public class AuthService : IAuthService
 
             dynamic userInfo = JsonConvert.DeserializeObject(json);
             string? email = userInfo?.email;
-            string? fullName = userInfo?.given_name;
-            string? firstName = null, lastName = null;
+            string? firstName = userInfo?.given_name;
+            string? lastName = userInfo?.family_name;
 
-            if (!string.IsNullOrWhiteSpace(fullName))
-            {
-                var nameParts = fullName.Trim().Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
-                firstName = nameParts.ElementAtOrDefault(0);
-                lastName = nameParts.ElementAtOrDefault(1);
-            }
             if (string.IsNullOrWhiteSpace(email))
                 throw new UnauthorizedAccessException(Constants.GoogleLoginNotVerified);
 
