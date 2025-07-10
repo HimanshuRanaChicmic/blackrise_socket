@@ -459,59 +459,41 @@ public class AuthService : IAuthService
         return result;
     }
     public async Task<LoginDto> LoginWithGoogleAsync(string accessToken)
-    {
-        try
-        {
-            using var client = new HttpClient();
+    { 
+        using var client = new HttpClient();
 
-            var tokenValidationResponse = await client.GetAsync($"{_googleSetting.GoogleOauthUrl}{accessToken}");
-            tokenValidationResponse.EnsureSuccessStatusCode();
+        var tokenValidationResponse = await client.GetAsync($"{_googleSetting.GoogleOauthUrl}{accessToken}");
+        tokenValidationResponse.EnsureSuccessStatusCode();
 
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-            var userInfoResponse = await client.GetAsync(_googleSetting.GoogleUserInfoUrl);
-            userInfoResponse.EnsureSuccessStatusCode();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        var userInfoResponse = await client.GetAsync(_googleSetting.GoogleUserInfoUrl);
+        userInfoResponse.EnsureSuccessStatusCode();
 
-            var json = await userInfoResponse.Content.ReadAsStringAsync();
-            if (string.IsNullOrWhiteSpace(json))
-                throw new UnauthorizedAccessException(Constants.GoogleLoginNotVerified);
+        var json = await userInfoResponse.Content.ReadAsStringAsync();
+        if (string.IsNullOrWhiteSpace(json))
+            throw new UnauthorizedAccessException(Constants.GoogleLoginNotVerified);
 
-            dynamic userInfo = JsonConvert.DeserializeObject(json);
-            string? email = userInfo?.email;
-            string? firstName = userInfo?.given_name;
-            string? lastName = userInfo?.family_name;
+        dynamic userInfo = JsonConvert.DeserializeObject(json);
+        string? email = userInfo?.email;
+        string? firstName = userInfo?.given_name;
+        string? lastName = userInfo?.family_name;
 
-            if (string.IsNullOrWhiteSpace(email))
-                throw new UnauthorizedAccessException(Constants.GoogleLoginNotVerified);
+        if (string.IsNullOrWhiteSpace(email))
+            throw new UnauthorizedAccessException(Constants.GoogleLoginNotVerified);
 
-            return await HandleExternalLoginAsync(email, firstName, lastName);
-        }
-        catch (Exception ex)
-        {
-            throw new UnauthorizedAccessException(Constants.GoogleLoginNotVerified, ex);
-        }
+        return await HandleExternalLoginAsync(email, firstName, lastName);
     }
 
 
     public async Task<LoginDto> LoginWithLinkedInAsync(string code)
     {
-        try
-        {
-            var gettoken = await GetLinkedInToken(code);
-            var linkedInUser = await GetLinkedInUserProfileAsync(gettoken);
+        var gettoken = await GetLinkedInToken(code);
+        var linkedInUser = await GetLinkedInUserProfileAsync(gettoken);
 
-            if (linkedInUser == null || string.IsNullOrEmpty(linkedInUser.Email))
-                throw new UnauthorizedAccessException(Constants.LinkedInLoginNotVerified);
+        if (linkedInUser == null || string.IsNullOrEmpty(linkedInUser.Email))
+            throw new UnauthorizedAccessException(Constants.LinkedInLoginNotVerified);
 
-            return await HandleExternalLoginAsync(linkedInUser.Email, linkedInUser.FirstName, linkedInUser.LastName);
-        }
-        catch (InvalidJwtException ex)
-        {
-            throw new UnauthorizedAccessException(Constants.LinkedInLoginNotVerified, ex);
-        }
-        catch (Exception ex)
-        {
-            throw new Exception(Constants.LinkedInLoginNotVerified, ex);
-        }
+        return await HandleExternalLoginAsync(linkedInUser.Email, linkedInUser.FirstName, linkedInUser.LastName);
     }
 
     public async Task<string> GetLinkedInToken(string authorizationCode)
@@ -564,27 +546,20 @@ public class AuthService : IAuthService
     }
     public async Task<LoginDto> LoginWithAppleAsync(string accessToken)
     {
-        try
-        {
-            _logger.LogInformation($"Verifying Apple ID token: {accessToken}");
-            var appleJwt = await VerifyAppleIdTokenAsync(accessToken);
-            if (appleJwt == null)
-                throw new UnauthorizedAccessException(Constants.AppleLoginNotVerified);
+        _logger.LogInformation($"Verifying Apple ID token: {accessToken}");
+        var appleJwt = await VerifyAppleIdTokenAsync(accessToken);
+        if (appleJwt == null)
+            throw new UnauthorizedAccessException(Constants.AppleLoginNotVerified);
 
-            var email = appleJwt.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
-            var userId = appleJwt.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
+        var email = appleJwt.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
+        var userId = appleJwt.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
 
-            if (string.IsNullOrEmpty(userId))
-                throw new UnauthorizedAccessException(Constants.AppleLoginNotVerified);
+        if (string.IsNullOrEmpty(userId))
+            throw new UnauthorizedAccessException(Constants.AppleLoginNotVerified);
 
-            email = email ?? $"{userId}@appleid.local";
+        email = email ?? $"{userId}@appleid.local";
 
-            return await HandleExternalLoginAsync(email, null, null, "Apple", userId, true);
-        }
-        catch (InvalidJwtException ex)
-        {
-            throw new UnauthorizedAccessException(Constants.AppleLoginNotVerified, ex);
-        }
+        return await HandleExternalLoginAsync(email, null, null, "Apple", userId, true);
     }
 
 
