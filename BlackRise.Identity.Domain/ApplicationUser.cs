@@ -16,5 +16,8 @@ public class ApplicationUser : IdentityUser<Guid>
     public DateTime ModifiedDate { get; set; }
     public bool IsActive { get; set; }
     public bool IsDeleted { get; set; }
+    public string? AppleId { get; set; }
+    public bool IsProfileCreated { get; set; }
+    public bool IsSocialLogin { get; set; }
     public ICollection<ApplicationUserRole> UserRoles { get; set; }
 }

@@ -1,9 +1,10 @@
 ﻿namespace BlackRise.Identity.Persistence.Utils
 {
-    public class Constants
+    public static class Constants
     {
         public const string InvalidEmailPassword = "Invalid email/password";
-        public const string UserPasswordNotSet = "User password not set. Sign in again.";
+        public const string UserNotFound = "User not found";
+        public const string UserPasswordNotSet = "User password not set. Complete Sign-up process.";
         public const string UserAccountDisabled = "User account disabled";
         public const string EmailNotConfirmed = "Email not confirm";
         public const string InvalidUsernamePassword = "Invalid username/password";
@@ -27,5 +28,9 @@
         public const string AccountNotCreatedWithApple = "We couldn't create your account with Apple. Please contact support.";
         public const string Success = "Success";
         public const string EmailValidated = "Email ID validated";
+        public const string CouldNotCreateAccount = "Account could not be created.";
+        public const string LoginProviderNotAdded = "Login provider could not be added.";
+        public const string ProfileCreatedSuccessfully = "Profile created Successfully";
+        public const string UserAlreadyRegisteredWithSocialLogin = "user alreay registered with social account";
     }
 }

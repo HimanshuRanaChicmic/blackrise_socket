@@ -17,6 +17,8 @@ using BlackRise.Identity.Application.Feature.Signup;
 using BlackRise.Identity.Application.Feature.Signup.Commands;
 using BlackRise.Identity.Application.Feature.UpdatePassword;
 using BlackRise.Identity.Application.Feature.UpdatePassword.Commands;
+using BlackRise.Identity.Application.Feature.User;
+using BlackRise.Identity.Application.Feature.User.Queries.UserDetail;
 using BlackRise.Identity.Application.Feature.VerifyResetPasswordCode;
 using BlackRise.Identity.Application.Feature.VerifyResetPasswordCode.Commands;
 using BlackRise.Identity.Application.Settings;
@@ -51,8 +53,7 @@ namespace BlackRise.Identity.Controllers
         {
             var linkedInCommand = new LinkedInCommand { AccessToken = code };
             var result = await _mediator.Send(linkedInCommand);
-            return Redirect($"{_clienturlSettings.LoginRedirect}?token={result.Token}");
-
+            return Redirect($"{_clienturlSettings.LoginRedirect}?token={result.Token}&userId={result.UserId}&email={result.Email??""}&firstname={result.FirstName??""}&lastname={result.LastName??""}&isProfileCreated={result.IsProfileCreated?.ToString() ?? "false"}");
         }
 
         [HttpPost("login/google")]

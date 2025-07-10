@@ -1,6 +1,7 @@
 ﻿using BlackRise.Identity.Application.Contracts;
 using BlackRise.Identity.Application.DataTransferObject;
 using BlackRise.Identity.Application.Exceptions;
+using BlackRise.Identity.Application.Feature.Login;
 using BlackRise.Identity.Application.Feature.Signup.Commands;
 using BlackRise.Identity.Application.Settings;
 using BlackRise.Identity.Domain;
@@ -8,10 +9,12 @@ using BlackRise.Identity.Domain.Common.Enums;
 using BlackRise.Identity.Persistence.Settings;
 using BlackRise.Identity.Persistence.Utils;
 using Google.Apis.Auth;
+using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
@@ -32,13 +35,16 @@ public class AuthService : IAuthService
     private readonly AppleSetting _appleSetting;
     private readonly ClientUrlSetting _clientUrlSettings;
     private readonly LinkedInSetting _linkedInSetting;
+    private readonly GoogleSetting _googleSetting;
     private readonly IHttpWrapper _httpWrapper;
     private readonly ILogger<AuthService> _logger;
     public AuthService(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager,
         RoleManager<ApplicationRole> roleManager,
         IOptions<JwtSetting> jwtSettings,
         IOptions<AppleSetting> appleSetting,
-        IOptions<ClientUrlSetting> clientUrlSettings, IHttpWrapper httpWrapper, IOptions<LinkedInSetting> linkedInSetting, ILogger<AuthService> logger) 
+        IOptions<ClientUrlSetting> clientUrlSettings, IHttpWrapper httpWrapper, 
+        IOptions<LinkedInSetting> linkedInSetting, ILogger<AuthService> logger,
+        IOptions<GoogleSetting> googleSetting) 
     {
         _userManager = userManager;
         _signInManager = signInManager;
@@ -47,11 +53,12 @@ public class AuthService : IAuthService
         _httpWrapper = httpWrapper;
         _jwtSettings = jwtSettings.Value;
         _linkedInSetting = linkedInSetting.Value;
+        _googleSetting = googleSetting.Value;
         _appleSetting = appleSetting.Value;
         _logger = logger;
     }
 
-    public async Task<string> LoginAsync(string username, string password)
+    public async Task<LoginDto> LoginAsync(string username, string password)
     {
         _logger.LogInformation($"Simple Login");
         var user = await _userManager.FindByEmailAsync(username);
@@ -59,7 +66,13 @@ public class AuthService : IAuthService
         if (user == null || user.IsDeleted)
             throw new BadRequestException(Constants.InvalidEmailPassword);
 
-        if(user.PasswordHash == null)
+        if(!user.EmailConfirmed)
+            throw new BadRequestException(Constants.EmailNotConfirmed);
+
+        if(user.IsSocialLogin)
+            throw new BadRequestException(Constants.UserAlreadyRegisteredWithSocialLogin);
+
+        if (user.PasswordHash == null && !user.IsSocialLogin)
             throw new BadRequestException(Constants.UserPasswordNotSet);
 
         if (!user.IsActive)
@@ -75,7 +88,13 @@ public class AuthService : IAuthService
 
         string token = await GenerateTokenAsync(user);
 
-        return token;
+        var loginDto = new LoginDto(token)
+        {
+            Email = user.Email,
+            UserId = user.Id,
+            AppleId = user.AppleId,
+        };
+        return loginDto;
     }
 
     public async Task<string> RegisterAsync(string username, string password)
@@ -115,49 +134,56 @@ public class AuthService : IAuthService
     public async Task<string> RegisterAsync(SignupCommand signupCommand)
     {
         var existingUser = await _userManager.FindByEmailAsync(signupCommand.Email);
+        var otp = "";
 
         if (existingUser != null && existingUser.EmailConfirmed && existingUser.PasswordHash != null)
             throw new BadRequestException(Constants.EmailAlreadyRegistered);
-
-        var newUser = new ApplicationUser
-        {
-            UserName = signupCommand.Email,
-            NormalizedUserName = signupCommand.Email.ToUpper(),
-            Email = signupCommand.Email,
-            NormalizedEmail = signupCommand.Email.ToUpper(),
-            CreatedDate = DateTime.UtcNow,
-            ModifiedDate = DateTime.UtcNow,
-            IsDeleted = false,
-            IsActive = true,
-            EmailConfirmed = false,
-        };
-        newUser.CreatedBy = newUser.Id;
-        newUser.ModifiedBy = newUser.Id;
-
            
-        if (existingUser != null && !existingUser.EmailConfirmed)
+        if (existingUser != null)
         {
-            newUser.Id = existingUser.Id;
-            await UpdateProfileAsync(newUser, signupCommand);
-
-            await SendEmailConfirmationCodeAsync(existingUser);
-
+            if (existingUser.IsSocialLogin && !existingUser.IsProfileCreated)
+            {
+                await CreateProfileAsync(existingUser, signupCommand);
+                return Constants.ProfileCreatedSuccessfully;
+            }
+            else
+            {
+                await SendEmailConfirmationCodeAsync(existingUser);
+                await UpdateProfileAsync(existingUser, signupCommand);
+            }
+            otp = existingUser.EmailConfirmationCode;
         }
         else
         {
+            var newUser = new ApplicationUser
+            {
+                UserName = signupCommand.Email,
+                NormalizedUserName = signupCommand.Email.ToUpper(),
+                Email = signupCommand.Email,
+                NormalizedEmail = signupCommand.Email.ToUpper(),
+                CreatedDate = DateTime.UtcNow,
+                ModifiedDate = DateTime.UtcNow,
+                IsDeleted = false,
+                IsActive = true,
+                EmailConfirmed = false,
+                IsProfileCreated = true,
+                IsSocialLogin = false
+            };
+            newUser.CreatedBy = newUser.Id;
+            newUser.ModifiedBy = newUser.Id;
             var result = await _userManager.CreateAsync(newUser);
 
             if (!result.Succeeded)
                 throw new BadRequestException($"{Constants.ErrorCreatingUser}: {result.Errors.First().Description}");
 
             _ = await _userManager.AddToRoleAsync(newUser, Role.User.ToString());
-            await CreateProfileAsync(newUser, signupCommand);
-
+            
             await SendEmailConfirmationCodeAsync(newUser);
+            await CreateProfileAsync(newUser, signupCommand);
+            otp = newUser.EmailConfirmationCode;
         }
 
-
-        return Constants.OtpSentSuccessfully;
+        return $"{Constants.OtpSentSuccessfully}: {otp ?? ""}";
     }
 
     public async Task<Tuple<Guid, string>> UpdateUserPasswordAsync(string email, string password)
@@ -181,26 +207,26 @@ public class AuthService : IAuthService
 
     public async Task<string> EmailConfirmationAsync(string email, string code)
     {
-            var existingUser = await _userManager.FindByEmailAsync(email);
+        var existingUser = await _userManager.FindByEmailAsync(email);
 
-            if (existingUser == null)
-                throw new BadRequestException(Constants.InvalidUserEmail);
+        if (existingUser == null)
+            throw new BadRequestException(Constants.InvalidUserEmail);
 
-            if (existingUser.EmailConfirmationCode != code)
-                throw new BadRequestException(Constants.InvalidOtp);
+        if (existingUser.EmailConfirmationCode != code)
+            throw new BadRequestException(Constants.InvalidOtp);
 
-            if (existingUser.EmailConfirmationCodeExpiry < DateTime.UtcNow)
-                throw new BadRequestException(Constants.OtpExpired);
+        if (existingUser.EmailConfirmationCodeExpiry < DateTime.UtcNow)
+            throw new BadRequestException(Constants.OtpExpired);
 
-            existingUser.EmailConfirmed = true;
-            existingUser.EmailConfirmationCode = null;
-            existingUser.EmailConfirmationCodeExpiry = null;
-            var result = await _userManager.UpdateAsync(existingUser);
+        existingUser.EmailConfirmed = true;
+        existingUser.EmailConfirmationCode = null;
+        existingUser.EmailConfirmationCodeExpiry = null;
+        var result = await _userManager.UpdateAsync(existingUser);
 
-            if (!result.Succeeded)
-                throw new BadRequestException($"Error while confirming user email {result.Errors.First().Description}");
+        if (!result.Succeeded)
+            throw new BadRequestException($"Error while confirming user email {result.Errors.First().Description}");
 
-            return Constants.OtpVerifiedSuccessfully;
+        return $"{Constants.OtpSentSuccessfully}: {existingUser.EmailConfirmationCode}";
 
     }
     public async Task<string> ResendEmailConfirmationAsync(string email)
@@ -212,7 +238,7 @@ public class AuthService : IAuthService
 
         await SendEmailConfirmationCodeAsync(existingUser);
 
-        return Constants.OtpSentSuccessfully;
+        return $"{Constants.OtpSentSuccessfully}: {existingUser.EmailConfirmationCode}";
     }
     public async Task<string> ResendResetPasswordCodeAsync(string email)
     {
@@ -226,7 +252,7 @@ public class AuthService : IAuthService
 
         await SendPasswordResetEmailAsync(existingUser);
 
-        return Constants.OtpSentSuccessfully;
+        return $"{Constants.OtpSentSuccessfully}: {existingUser.EmailConfirmationCode}";
     }
 
 
@@ -433,28 +459,47 @@ public class AuthService : IAuthService
 
         return result;
     }
-
-    public async Task<string> LoginWithGoogleAsync(string accessToken)
+    public async Task<LoginDto> LoginWithGoogleAsync(string accessToken)
     {
         try
         {
-            var payload = await GoogleJsonWebSignature.ValidateAsync(accessToken);
-            if (payload == null)
+            using var client = new HttpClient();
+
+            var tokenValidationResponse = await client.GetAsync($"{_googleSetting.GoogleOauthUrl}{accessToken}");
+            tokenValidationResponse.EnsureSuccessStatusCode();
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            var userInfoResponse = await client.GetAsync(_googleSetting.GoogleUserInfoUrl);
+            userInfoResponse.EnsureSuccessStatusCode();
+
+            var json = await userInfoResponse.Content.ReadAsStringAsync();
+            if (string.IsNullOrWhiteSpace(json))
                 throw new UnauthorizedAccessException(Constants.GoogleLoginNotVerified);
 
-            return await HandleExternalLoginAsync(payload.Email, payload.GivenName, payload.FamilyName);
-        }
-        catch (InvalidJwtException ex)
-        {
-            throw new UnauthorizedAccessException(Constants.GoogleLoginNotVerified, ex);
+            dynamic userInfo = JsonConvert.DeserializeObject(json);
+            string? email = userInfo?.email;
+            string? fullName = userInfo?.given_name;
+            string? firstName = null, lastName = null;
+
+            if (!string.IsNullOrWhiteSpace(fullName))
+            {
+                var nameParts = fullName.Trim().Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
+                firstName = nameParts.ElementAtOrDefault(0);
+                lastName = nameParts.ElementAtOrDefault(1);
+            }
+            if (string.IsNullOrWhiteSpace(email))
+                throw new UnauthorizedAccessException(Constants.GoogleLoginNotVerified);
+
+            return await HandleExternalLoginAsync(email, firstName, lastName);
         }
         catch (Exception ex)
         {
-            throw new Exception(Constants.GoogleLoginNotVerified, ex);
+            throw new UnauthorizedAccessException(Constants.GoogleLoginNotVerified, ex);
         }
     }
 
-    public async Task<string> LoginWithLinkedInAsync(string code)
+
+    public async Task<LoginDto> LoginWithLinkedInAsync(string code)
     {
         try
         {
@@ -509,7 +554,7 @@ public class AuthService : IAuthService
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         client.DefaultRequestHeaders.Add("X-Restli-Protocol-Version", "2.0.0");
 
-        var response = await client.GetAsync(_linkedInSetting.LinkedUserInfoUrl);
+        var response = await client.GetAsync(_linkedInSetting.LinkedInUserInfoUrl);
         var content = await response.Content.ReadAsStringAsync();
         var userInfo = JsonDocument.Parse(content);
 
@@ -524,7 +569,7 @@ public class AuthService : IAuthService
             Email = email ?? ""
         };
     }
-    public async Task<string> LoginWithAppleAsync(string accessToken)
+    public async Task<LoginDto> LoginWithAppleAsync(string accessToken)
     {
         try
         {
@@ -539,7 +584,9 @@ public class AuthService : IAuthService
             if (string.IsNullOrEmpty(userId))
                 throw new UnauthorizedAccessException(Constants.AppleLoginNotVerified);
 
-            return await HandleExternalLoginAsync(email, null, null, "Apple", userId);
+            email = email ?? $"{userId}@appleid.local";
+
+            return await HandleExternalLoginAsync(email, null, null, "Apple", userId, true);
         }
         catch (InvalidJwtException ex)
         {
@@ -548,7 +595,7 @@ public class AuthService : IAuthService
     }
 
 
-    private async Task<string> HandleExternalLoginAsync(string? email, string? firstName, string? lastName, string? provider = null, string? providerUserId = null)
+    private async Task<LoginDto> HandleExternalLoginAsync(string email, string? firstName, string? lastName, string? provider = null, string? providerUserId = null, bool isApple = false)
     {
         ApplicationUser? user;
 
@@ -561,7 +608,7 @@ public class AuthService : IAuthService
         {
             var signupCommand = new SignupCommand
             {
-                FirstName = string.IsNullOrWhiteSpace(firstName) ? "AppleUser" : firstName,
+                FirstName = firstName ?? "",
                 LastName = lastName ?? "",
                 IsReceiveBlackRiseEmails = false,
                 IsReconnectWithEmail = false,
@@ -569,30 +616,47 @@ public class AuthService : IAuthService
             user = new ApplicationUser
             {
                 UserName = email ?? providerUserId,
-                Email = email ?? providerUserId,
+                Email = email ?? "",
                 NormalizedEmail = (email ?? "").ToUpper(),
                 NormalizedUserName = (email ?? "").ToUpper(),
                 EmailConfirmed = true,
                 IsActive = true,
                 IsDeleted = false,
                 CreatedDate = DateTime.UtcNow,
-                ModifiedDate = DateTime.UtcNow
+                ModifiedDate = DateTime.UtcNow,
+                AppleId = isApple ? providerUserId : null,
+                IsProfileCreated = false,
+                IsSocialLogin = true,
             };
 
-            var result = await _userManager.CreateAsync(user);
-            if (!result.Succeeded)
-                throw new ArgumentException($"Account could not be created.");
-
-            if (!string.IsNullOrEmpty(provider))
+            if (isApple)
             {
-                await _userManager.AddLoginAsync(user, new UserLoginInfo(provider, providerUserId, provider));
+                var loginInfo = new UserLoginInfo(provider, providerUserId, provider);
+                var loginResult = await _userManager.AddLoginAsync(user, loginInfo);
+                if (!loginResult.Succeeded)
+                    throw new ArgumentException(Constants.LoginProviderNotAdded);
+            }
+            else
+            {
+                var createResult = await _userManager.CreateAsync(user);
+                if (!createResult.Succeeded)
+                    throw new ArgumentException(Constants.AccountDoesNotExist);
             }
 
-            await CreateProfileAsync(user, signupCommand);
             await _userManager.AddToRoleAsync(user, Role.User.ToString());
         }
 
-        return await GenerateTokenAsync(user);
+        var token = await GenerateTokenAsync(user);
+        var loginDto = new LoginDto(token)
+        {
+            Email = user.Email,
+            UserId = user.Id,
+            AppleId = user.AppleId,
+            FirstName = firstName,
+            LastName = lastName,
+            IsProfileCreated = user.IsProfileCreated,
+        };
+        return loginDto;
     }
     public async Task<JwtSecurityToken> VerifyAppleIdTokenAsync(string accessToken)
     {

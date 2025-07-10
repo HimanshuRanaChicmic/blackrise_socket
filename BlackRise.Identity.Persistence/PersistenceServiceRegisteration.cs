@@ -25,6 +25,7 @@ public static class PersistenceServiceRegisteration
         services.Configure<EmailSetting>(configuration.GetSection("EmailSettings"));
         services.Configure<LinkedInSetting>(configuration.GetSection("LinkedInSetting"));
         services.Configure<AppleSetting>(configuration.GetSection("AppleSetting"));
+        services.Configure<GoogleSetting>(configuration.GetSection("GoogleSetting"));
 
         return services;
     }
@@ -61,6 +62,7 @@ public static class PersistenceServiceRegisteration
                 opt.TokenLifespan = TimeSpan.FromMinutes(double.Parse(builder.Configuration.GetSection("ClientUrlSettings:ResetPasswordTokenExpire").Value ?? string.Empty)));
 
         _ = services.AddTransient<IAuthService, AuthService>();
+        _ = services.AddTransient<IUserService, UserService>();
 
         _ = services.AddAuthentication(options =>
         {
