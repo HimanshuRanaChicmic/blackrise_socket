@@ -38,6 +38,7 @@ Console.WriteLine($"LINKEDIN_CLIENT_SECRET: {Environment.GetEnvironmentVariable(
 // Log all JWT env variables for testing
 Console.WriteLine($"JWT_KEY: {Environment.GetEnvironmentVariable("JWT_KEY")}");
 Console.WriteLine($"JWT_LINKEDIN_CLIENT_ID: {Environment.GetEnvironmentVariable("JWT_LINKEDIN_CLIENT_ID")}");
+
 Console.WriteLine($"JWT_LINKEDIN_CLIENT_SECRET: {Environment.GetEnvironmentVariable("JWT_LINKEDIN_CLIENT_SECRET")}");
 
 
