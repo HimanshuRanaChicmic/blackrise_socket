@@ -139,7 +139,7 @@ public class AuthService : IAuthService
             throw new BadRequestException(Constants.UserAlreadyRegisteredWithSocialLogin);
 
         if (existingUser != null && existingUser.EmailConfirmed)
-            throw new BadRequestException(Constants.UserAlreadyRegisteredWithSocialLogin);
+            throw new BadRequestException(Constants.EmailAlreadyRegistered);
 
         if (existingUser != null)
         {
