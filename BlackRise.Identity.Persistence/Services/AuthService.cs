@@ -639,9 +639,6 @@ public class AuthService : IAuthService
                 throw new ArgumentException(Constants.LoginProviderNotAdded);
 
             await _userManager.AddToRoleAsync(user, Role.User.ToString());
-
-            //if(!isApple)
-            //    await CreateProfileAsync(user, signupCommand);
         }
 
         var token = await GenerateTokenAsync(user);
@@ -651,7 +648,8 @@ public class AuthService : IAuthService
             UserId = user.Id,
             AppleId = user.AppleId,
             FirstName = firstName,
-            LastName = lastName
+            LastName = lastName,
+            IsProfileCreated = user.IsProfileCreated,
         };
         return loginDto;
     }

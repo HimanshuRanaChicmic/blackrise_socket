@@ -53,7 +53,7 @@ namespace BlackRise.Identity.Controllers
         {
             var linkedInCommand = new LinkedInCommand { AccessToken = code };
             var result = await _mediator.Send(linkedInCommand);
-            return Redirect($"{_clienturlSettings.LoginRedirect}?token={result.Token}&userId={result.UserId}&email={result.Email??""}&firstname={result.FirstName??""}&lastname={result.LastName??""}");
+            return Redirect($"{_clienturlSettings.LoginRedirect}?token={result.Token}&userId={result.UserId}&email={result.Email??""}&firstname={result.FirstName??""}&lastname={result.LastName??""}&isProfileCreated={result.IsProfileCreated?.ToString() ?? "false"}");
         }
 
         [HttpPost("login/google")]
