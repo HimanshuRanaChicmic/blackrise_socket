@@ -305,7 +305,10 @@ public class AuthService : IAuthService
         if (!existingUser.IsActive)
             throw new UnAuthorizedException(Constants.UserAccountDisabled);
 
-        if(existingUser.PasswordHash == null)
+        if(existingUser.IsSocialLogin)
+            throw new BadRequestException(Constants.PasswordResetNotAvailableForSocialLogin);
+
+        if (!existingUser.IsSocialLogin && existingUser.PasswordHash == null)
             throw new BadRequestException(Constants.AccountDoesNotExist);
 
         await SendPasswordResetEmailAsync(existingUser);
@@ -568,11 +571,12 @@ public class AuthService : IAuthService
 
     private async Task<LoginDto> HandleExternalLoginAsync(string email, string? firstName, string? lastName, string? provider = null, string? providerUserId = null, bool isApple = false)
     {
-        ApplicationUser? user;
+        ApplicationUser? user = null;
 
         if (!string.IsNullOrEmpty(provider) && !string.IsNullOrEmpty(providerUserId))
             user = await _userManager.FindByLoginAsync(provider, providerUserId);
-        else
+
+        if (user == null && email != null)
             user = await _userManager.FindByEmailAsync(email);
 
         if (user == null)
@@ -594,7 +598,7 @@ public class AuthService : IAuthService
             };
             var createResult = await _userManager.CreateAsync(user);
             if (!createResult.Succeeded)
-                throw new ArgumentException(Constants.AccountDoesNotExist);
+                throw new ArgumentException(Constants.CouldNotCreateAccount);
 
             if (isApple)
             {
