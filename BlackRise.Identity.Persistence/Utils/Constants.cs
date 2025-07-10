@@ -31,6 +31,6 @@
         public const string CouldNotCreateAccount = "Account could not be created.";
         public const string LoginProviderNotAdded = "Login provider could not be added.";
         public const string ProfileCreatedSuccessfully = "Profile created Successfully";
-        public const string UserAlreadyRegisteredWithSocialLogin = "user alreay registered with social account";
+        public const string UserAlreadyRegisteredWithSocialLogin = "Account already exists. Please continue using your social login.";
     }
 }
