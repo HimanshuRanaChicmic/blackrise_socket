@@ -7,8 +7,20 @@ using BlackRise.Identity.Persistence;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json.Serialization;
+using DotNetEnv;
+Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
+
+var dbHost = Environment.GetEnvironmentVariable("DB_HOST") ?? "";
+var dbName = Environment.GetEnvironmentVariable("DB_NAME") ?? "";
+var dbUser = Environment.GetEnvironmentVariable("DB_USERNAME") ?? "";
+var dbPass = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "";
+
+
+string defaultConnStr = $"Host={dbHost};Database={dbName};Username={dbUser};Password={dbPass}";
+
+Console.WriteLine($"Fetching secrets: {defaultConnStr}");
 
 builder.Services.AddControllers(options =>
 {
