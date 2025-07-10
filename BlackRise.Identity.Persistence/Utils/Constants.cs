@@ -32,5 +32,6 @@
         public const string LoginProviderNotAdded = "Login provider could not be added.";
         public const string ProfileCreatedSuccessfully = "Profile created Successfully";
         public const string UserAlreadyRegisteredWithSocialLogin = "Account already exists. Please continue using your social login.";
+        public const string PasswordResetNotAvailableForSocialLogin = "Password reset is not available for accounts created via social login. Please continue signing in using your [Google/LinkedIn/Apple] account.";
     }
 }

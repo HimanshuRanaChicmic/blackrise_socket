@@ -305,7 +305,10 @@ public class AuthService : IAuthService
         if (!existingUser.IsActive)
             throw new UnAuthorizedException(Constants.UserAccountDisabled);
 
-        if(existingUser.PasswordHash == null)
+        if(existingUser.IsSocialLogin)
+            throw new BadRequestException(Constants.PasswordResetNotAvailableForSocialLogin);
+
+        if (!existingUser.IsSocialLogin && existingUser.PasswordHash == null)
             throw new BadRequestException(Constants.AccountDoesNotExist);
 
         await SendPasswordResetEmailAsync(existingUser);
