@@ -168,7 +168,7 @@ public class AuthService : IAuthService
                 IsDeleted = false,
                 IsActive = true,
                 EmailConfirmed = false,
-                IsProfileCreated = true,
+                IsProfileCreated = false,
                 IsSocialLogin = false
             };
             newUser.CreatedBy = newUser.Id;
