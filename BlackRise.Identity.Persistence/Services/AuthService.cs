@@ -92,6 +92,7 @@ public class AuthService : IAuthService
             Email = user.Email,
             UserId = user.Id,
             AppleId = user.AppleId,
+            IsProfileCreated = user.IsProfileCreated
         };
         return loginDto;
     }
