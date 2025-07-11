@@ -53,8 +53,8 @@ namespace BlackRise.Identity.Controllers
                 var linkedInCommand = new LinkedInCommand { AccessToken = code };
                 var result = await _mediator.Send(linkedInCommand);
                 var isprofileCreated = result.IsProfileCreated == true ? "true" : "false";
-                Console.WriteLine($"isprofileCreated... : {isprofileCreated}");
-                return Redirect($"{_clienturlSettings.LoginRedirect}?token={result.Token}&userId={result.UserId}&email={result.Email ?? ""}&firstname={result.FirstName ?? ""}&lastname={result.LastName ?? ""}&isProfileCreated={isprofileCreated}");
+                var isProfileCompleted = result.IsProfileCompleted == true ? "true" : "false";
+                return Redirect($"{_clienturlSettings.LoginRedirect}?token={result.Token}&userId={result.UserId}&email={result.Email ?? ""}&firstname={result.FirstName ?? ""}&lastname={result.LastName ?? ""}&isProfileCreated={isprofileCreated}&isProfileCompleted={isProfileCompleted}");
             }
             catch (Exception ex)
             {
