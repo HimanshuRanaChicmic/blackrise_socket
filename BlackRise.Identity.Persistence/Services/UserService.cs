@@ -31,13 +31,27 @@ namespace BlackRise.Identity.Persistence.Services
             };
         }
 
-        public async Task<string> UpdateUserProfileStatus(ProfileStatusCommand request)
+        public async Task<string> UpdateUserProfileCreateStatus(ProfileCreateStatusCommand request)
         {
             var user = await _userManager.FindByIdAsync(request.Id.ToString());
             if (user == null)
                 throw new NotFoundException(Constants.UserNotFound);
 
-            user.IsProfileCreated = request.IsProfileCreated;
+            user.IsProfileCreated = request.IsProfileCreated == true;
+            var result = await _userManager.UpdateAsync(user);
+
+            if (!result.Succeeded)
+                throw new BadRequestException($"Error while confirm user email {result.Errors.First().Description}");
+
+            return Constants.Success;
+        }
+        public async Task<string> UpdateUserProfileCompleteStatus(ProfileCompleteStatusCommand request)
+        {
+            var user = await _userManager.FindByIdAsync(request.Id.ToString());
+            if (user == null)
+                throw new NotFoundException(Constants.UserNotFound);
+
+            user.IsProfileCompleted = request.IsProfileCompleted == true;
             var result = await _userManager.UpdateAsync(user);
 
             if (!result.Succeeded)

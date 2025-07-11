@@ -9,4 +9,5 @@ public class LoginDto(string token)
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
     public bool? IsProfileCreated { get; set; }
+    public bool? IsProfileCompleted { get; set; }
 }

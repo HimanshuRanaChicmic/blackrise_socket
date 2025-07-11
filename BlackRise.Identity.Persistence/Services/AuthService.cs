@@ -92,7 +92,8 @@ public class AuthService : IAuthService
             Email = user.Email,
             UserId = user.Id,
             AppleId = user.AppleId,
-            IsProfileCreated = user.IsProfileCreated
+            IsProfileCreated = user.IsProfileCreated,
+            IsProfileCompleted = user.IsProfileCompleted
         };
         return loginDto;
     }
@@ -169,7 +170,8 @@ public class AuthService : IAuthService
                 IsDeleted = false,
                 IsActive = true,
                 EmailConfirmed = false,
-                IsProfileCreated = false,
+                IsProfileCreated = true,
+                IsProfileCompleted = false,
                 IsSocialLogin = false
             };
             newUser.CreatedBy = newUser.Id;
@@ -595,6 +597,7 @@ public class AuthService : IAuthService
                 ModifiedDate = DateTime.UtcNow,
                 AppleId = isApple ? providerUserId : null,
                 IsProfileCreated = false,
+                IsProfileCompleted = false,
                 IsSocialLogin = true,
             };
             var createResult = await _userManager.CreateAsync(user);
@@ -626,6 +629,7 @@ public class AuthService : IAuthService
             FirstName = firstName,
             LastName = lastName,
             IsProfileCreated = user.IsProfileCreated,
+            IsProfileCompleted = user.IsProfileCompleted,
         };
         return loginDto;
     }

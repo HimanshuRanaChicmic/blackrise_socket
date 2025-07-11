@@ -2,7 +2,6 @@
 using BlackRise.Identity.Application.Feature.User.Commands.ProfileStatus;
 using BlackRise.Identity.Application.Feature.User.Queries.UserDetail;
 using MediatR;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BlackRise.Identity.Controllers
@@ -21,8 +20,14 @@ namespace BlackRise.Identity.Controllers
             return Ok(await _mediator.Send(new GetUserQuery { UserId = id }));
         }
 
-        [HttpPost("profile-status")]
-        public async Task<ActionResult<UserDto>> UpdateProfileStatus([FromBody] ProfileStatusCommand command)
+        [HttpPost("profile-create-status")]
+        public async Task<ActionResult<UserDto>> UpdateProfileCreateStatus([FromBody] ProfileCreateStatusCommand command)
+        {
+            return Ok(await _mediator.Send(command));
+        }
+
+        [HttpPost("profile-complete-status")]
+        public async Task<ActionResult<UserDto>> UpdateProfileCompleteStatus([FromBody] ProfileCompleteStatusCommand command)
         {
             return Ok(await _mediator.Send(command));
         }

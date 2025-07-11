@@ -7,6 +7,7 @@ namespace BlackRise.Identity.Application.Contracts
     public interface IUserService
     {
         Task<UserDto> GetUserById(Guid userId);
-        Task<string> UpdateUserProfileStatus(ProfileStatusCommand request);
+        Task<string> UpdateUserProfileCreateStatus(ProfileCreateStatusCommand request);
+        Task<string> UpdateUserProfileCompleteStatus(ProfileCompleteStatusCommand request);
     }
 }
