@@ -48,11 +48,19 @@ namespace BlackRise.Identity.Controllers
         [HttpGet("login/linkedin/callback")]
         public async Task<IActionResult> Callback([FromQuery] string code)
         {
-            var linkedInCommand = new LinkedInCommand { AccessToken = code };
-            var result = await _mediator.Send(linkedInCommand);
-            var isprofileCreated = result.IsProfileCreated == true ? "true" : "false";
-            Console.WriteLine($"isprofileCreated... : {isprofileCreated}");
-            return Redirect($"{_clienturlSettings.LoginRedirect}?token={result.Token}&userId={result.UserId}&email={result.Email ?? ""}&firstname={result.FirstName ?? ""}&lastname={result.LastName ?? ""}&isProfileCreated={isprofileCreated}");
+            try
+            {
+                var linkedInCommand = new LinkedInCommand { AccessToken = code };
+                var result = await _mediator.Send(linkedInCommand);
+                var isprofileCreated = result.IsProfileCreated == true ? "true" : "false";
+                Console.WriteLine($"isprofileCreated... : {isprofileCreated}");
+                return Redirect($"{_clienturlSettings.LoginRedirect}?token={result.Token}&userId={result.UserId}&email={result.Email ?? ""}&firstname={result.FirstName ?? ""}&lastname={result.LastName ?? ""}&isProfileCreated={isprofileCreated}");
+            }
+            catch (Exception ex)
+            {
+                return Redirect($"{_clienturlSettings.LoginRedirect}?errorMessage={Uri.EscapeDataString(ex.Message)}");
+            }
+            
         }
 
         [HttpPost("login/google")]
