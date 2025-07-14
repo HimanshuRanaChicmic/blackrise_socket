@@ -1,16 +1,15 @@
-
-name: Deploy security service to ECS Dev
+name: Deploy security service to ECS Stage
 
 on:
   push:
     branches:
-      - dev
+      - staging
 
 env:
   AWS_REGION: eu-west-2               
-  ECR_REPOSITORY: tbr-security-service-dev     
-  ECS_SERVICE: tbr-security-service-dev
-  ECS_CLUSTER: tbr-ecs-cluster-dev             
+  ECR_REPOSITORY: tbr-security-service-stage     
+  ECS_SERVICE: tbr-security-service-stage
+  ECS_CLUSTER: tbr-ecs-cluster-stage             
   ECS_TASK_DEFINITION: .github/workflows/security-service-task-defination.json 
   CONTAINER_NAME: security-service
 
@@ -22,7 +21,7 @@ jobs:
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
-    environment: dev
+    environment: stage
 
     steps:
       - name: Checkout
@@ -31,7 +30,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::893085071144:role/tbr-github-actions-oidc-role-dev
+          role-to-assume: arn:aws:iam::625073454551:role/tbr-github-actions-oidc-role-stage
           role-session-name: Github
           aws-region: ${{ env.AWS_REGION }}
 
