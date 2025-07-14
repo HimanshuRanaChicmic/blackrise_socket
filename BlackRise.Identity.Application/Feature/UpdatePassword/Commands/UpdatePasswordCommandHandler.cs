@@ -14,6 +14,6 @@ public class UpdatePasswordCommandHandler : IRequestHandler<UpdatePasswordComman
     public async Task<UpdatePasswordDto> Handle(UpdatePasswordCommand request, CancellationToken cancellationToken)
     {
         var result = await _authService.UpdateUserPasswordAsync(request.Email, request.Password);
-        return new UpdatePasswordDto(result.Item2,result.Item1);
+        return new UpdatePasswordDto(result.Item1,result.Item2);
     }
 }

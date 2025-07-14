@@ -19,5 +19,5 @@ public interface IAuthService
     Task<string> ResetConfirmationAsync(string email, string code);
     Task<string> ResetPasswordAsync(string email, string password);
 
-    Task<Tuple<Guid, string>> UpdateUserPasswordAsync(string email, string password);
+    Task<Tuple<string, LoginDto>> UpdateUserPasswordAsync(string email, string password);
 }

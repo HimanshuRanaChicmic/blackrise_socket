@@ -191,7 +191,7 @@ public class AuthService : IAuthService
         return $"{Constants.OtpSentSuccessfully}: {otp ?? ""}";
     }
 
-    public async Task<Tuple<Guid, string>> UpdateUserPasswordAsync(string email, string password)
+    public async Task<Tuple<string, LoginDto>> UpdateUserPasswordAsync(string email, string password)
     {
         var existingUser = await _userManager.FindByEmailAsync(email);
 
@@ -206,8 +206,17 @@ public class AuthService : IAuthService
 
         if (!result.Succeeded)
             throw new BadRequestException($"Error while updating user password {result.Errors.First().Description}");
-
-        return new Tuple<Guid, string>(existingUser.Id, Constants.PasswordUpdated);
+        string token = await GenerateTokenAsync(existingUser);
+        //return new Tuple<Guid, string>(existingUser.Id, Constants.PasswordUpdated);
+        var loginDto = new LoginDto(token)
+        {
+            Email = existingUser.Email,
+            UserId = existingUser.Id,
+            AppleId = existingUser.AppleId,
+            IsProfileCreated = existingUser.IsProfileCreated,
+            IsProfileCompleted = existingUser.IsProfileCompleted,
+        };
+        return new Tuple<string, LoginDto>(Constants.PasswordUpdated, loginDto);
     }
 
     public async Task<string> EmailConfirmationAsync(string email, string code)

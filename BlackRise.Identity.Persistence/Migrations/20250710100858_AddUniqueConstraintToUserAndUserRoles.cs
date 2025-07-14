@@ -31,6 +31,13 @@ namespace BlackRise.Identity.Persistence.Migrations
                 nullable: false,
                 defaultValue: false);
 
+            migrationBuilder.AddColumn<bool>(
+                name: "IsProfileCompleted",
+                table: "Users",
+                type: "boolean",
+                nullable: false,
+                defaultValue: false);
+
             migrationBuilder.UpdateData(
                 table: "Roles",
                 keyColumn: "Id",
@@ -107,6 +114,10 @@ namespace BlackRise.Identity.Persistence.Migrations
 
             migrationBuilder.DropColumn(
                 name: "IsSocialLogin",
+                table: "Users");
+
+            migrationBuilder.DropColumn(
+                name: "IsProfileCompleted",
                 table: "Users");
 
             migrationBuilder.UpdateData(
