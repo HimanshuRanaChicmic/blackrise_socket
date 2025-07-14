@@ -1,9 +1,9 @@
 {
-  "family": "tbr-security-service-dev",
+  "family": "tbr-security-service-stage",
   "containerDefinitions": [
     {
       "name": "security-service",
-      "image": "893085071144.dkr.ecr.eu-west-2.amazonaws.com/tbr-security-service-dev:latest",
+      "image": "625073454551.dkr.ecr.eu-west-2.amazonaws.com/tbr-security-service-stage:latest",
       "cpu": 0,
       "portMappings": [
         {
@@ -20,57 +20,57 @@
       "secrets": [
         {
           "name": "DB_HOST",
-          "valueFrom": "arn:aws:secretsmanager:eu-west-2:893085071144:secret:securityServiceEnv-ineDdw:DB_HOST:AWSCURRENT:"
+          "valueFrom": "arn:aws:secretsmanager:eu-west-2:625073454551:secret:tbr-security-service-stage-f5dhu0:DB_HOST:AWSCURRENT:"
         },
         {
           "name": "DB_NAME",
-          "valueFrom": "arn:aws:secretsmanager:eu-west-2:893085071144:secret:securityServiceEnv-ineDdw:DB_NAME:AWSCURRENT:"
+          "valueFrom": "arn:aws:secretsmanager:eu-west-2:625073454551:secret:tbr-security-service-stage-f5dhu0:DB_NAME:AWSCURRENT:"
         },
         {
           "name": "DB_USERNAME",
-          "valueFrom": "arn:aws:secretsmanager:eu-west-2:893085071144:secret:securityServiceEnv-ineDdw:DB_USERNAME:AWSCURRENT:"
+          "valueFrom": "arn:aws:secretsmanager:eu-west-2:625073454551:secret:tbr-security-service-stage-f5dhu0:DB_USERNAME:AWSCURRENT:"
         },
         {
           "name": "DB_PASSWORD",
-          "valueFrom": "arn:aws:secretsmanager:eu-west-2:893085071144:secret:securityServiceEnv-ineDdw:DB_PASSWORD:AWSCURRENT:"
+          "valueFrom": "arn:aws:secretsmanager:eu-west-2:625073454551:secret:tbr-security-service-stage-f5dhu0:DB_PASSWORD:AWSCURRENT:"
         },
         {
           "name": "EMAIL_PASSWORD",
-          "valueFrom": "arn:aws:secretsmanager:eu-west-2:893085071144:secret:securityServiceEnv-ineDdw:EMAIL_PASSWORD:AWSCURRENT:"
+          "valueFrom": "arn:aws:secretsmanager:eu-west-2:625073454551:secret:tbr-security-service-stage-f5dhu0:EMAIL_PASSWORD:AWSCURRENT:"
         },
         {
           "name": "EMAIL_HOST",
-          "valueFrom": "arn:aws:secretsmanager:eu-west-2:893085071144:secret:securityServiceEnv-ineDdw:EMAIL_HOST:AWSCURRENT:"
+          "valueFrom": "arn:aws:secretsmanager:eu-west-2:625073454551:secret:tbr-security-service-stage-f5dhu0:EMAIL_HOST:AWSCURRENT:"
         },
         {
           "name": "EMAIL_PORT",
-          "valueFrom": "arn:aws:secretsmanager:eu-west-2:893085071144:secret:securityServiceEnv-ineDdw:EMAIL_PORT:AWSCURRENT:"
+          "valueFrom": "arn:aws:secretsmanager:eu-west-2:625073454551:secret:tbr-security-service-stage-f5dhu0:EMAIL_PORT:AWSCURRENT:"
         },
         {
           "name": "LINKEDIN_CLIENT_ID",
-          "valueFrom": "arn:aws:secretsmanager:eu-west-2:893085071144:secret:securityServiceEnv-ineDdw:LINKEDIN_CLIENT_ID:AWSCURRENT:"
+          "valueFrom": "arn:aws:secretsmanager:eu-west-2:625073454551:secret:tbr-security-service-stage-f5dhu0:LINKEDIN_CLIENT_ID:AWSCURRENT:"
         },
         {
           "name": "LINKEDIN_CLIENT_SECRET",
-          "valueFrom": "arn:aws:secretsmanager:eu-west-2:893085071144:secret:securityServiceEnv-ineDdw:LINKEDIN_CLIENT_SECRET:AWSCURRENT:"
+          "valueFrom": "arn:aws:secretsmanager:eu-west-2:625073454551:secret:tbr-security-service-stage-f5dhu0:LINKEDIN_CLIENT_SECRET:AWSCURRENT:"
         },
         {
           "name": "JWT_KEY",
-          "valueFrom": "arn:aws:secretsmanager:eu-west-2:893085071144:secret:securityServiceEnv-ineDdw:JWT_KEY:AWSCURRENT:"
+          "valueFrom": "arn:aws:secretsmanager:eu-west-2:625073454551:secret:tbr-security-service-stage-f5dhu0:JWT_KEY:AWSCURRENT:"
         },
         {
           "name": "JWT_LINKEDIN_CLIENT_ID",
-          "valueFrom": "arn:aws:secretsmanager:eu-west-2:893085071144:secret:securityServiceEnv-ineDdw:JWT_LINKEDIN_CLIENT_ID:AWSCURRENT:"
+          "valueFrom": "arn:aws:secretsmanager:eu-west-2:625073454551:secret:tbr-security-service-stage-f5dhu0:JWT_LINKEDIN_CLIENT_ID:AWSCURRENT:"
         },
         {
           "name": "JWT_LINKEDIN_CLIENT_SECRET",
-          "valueFrom": "arn:aws:secretsmanager:eu-west-2:893085071144:secret:securityServiceEnv-ineDdw:JWT_LINKEDIN_CLIENT_SECRET:AWSCURRENT:"
+          "valueFrom": "arn:aws:secretsmanager:eu-west-2:625073454551:secret:tbr-security-service-stage-f5dhu0:JWT_LINKEDIN_CLIENT_SECRET:AWSCURRENT:"
         }
       ],
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-          "awslogs-group": "/ecs/tbr-security-service-dev",
+          "awslogs-group": "/ecs/tbr-security-service-stage",
           "awslogs-region": "eu-west-2",
           "awslogs-stream-prefix": "ecs"
         }
@@ -96,7 +96,7 @@
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-          "awslogs-group": "/ecs/tbr-security-service-dev",
+          "awslogs-group": "/ecs/tbr-security-service-stage",
           "awslogs-region": "eu-west-2",
           "awslogs-stream-prefix": "xray"
         }
@@ -104,8 +104,8 @@
       "systemControls": []
     }
   ],
-  "taskRoleArn": "arn:aws:iam::893085071144:role/tbr-ecs-task-role-dev",
-  "executionRoleArn": "arn:aws:iam::893085071144:role/tbr-ecs-task-execution-role-dev",
+  "taskRoleArn": "arn:aws:iam::625073454551:role/tbr-ecs-task-role-stage",
+  "executionRoleArn": "arn:aws:iam::625073454551:role/tbr-ecs-task-execution-role-stage",
   "networkMode": "awsvpc",
   "volumes": [],
   "placementConstraints": [],
@@ -117,7 +117,7 @@
   "tags": [
     {
       "key": "Environment",
-      "value": "dev"
+      "value": "stage"
     }
   ]
 }
