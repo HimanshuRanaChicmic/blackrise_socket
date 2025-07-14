@@ -27,7 +27,8 @@ namespace BlackRise.Identity.Persistence.Services
                 UserName = user.UserName,
                 Email = user.Email,
                 PhoneNumber = user.PhoneNumber,
-                IsProfileCreated = user.IsProfileCreated
+                IsProfileCreated = user.IsProfileCreated,
+                IsProfileCompleted = user.IsProfileCompleted
             };
         }
 
