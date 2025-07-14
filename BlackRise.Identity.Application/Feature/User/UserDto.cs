@@ -8,5 +8,6 @@
         public string? PhoneNumber { get; set; }
         public string? AppleId { get; set; }
         public bool IsProfileCreated { get; set; }
+        public bool IsProfileCompleted { get; set; }
     }
 }
