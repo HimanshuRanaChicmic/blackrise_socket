@@ -7,6 +7,7 @@ using BlackRise.Identity.Persistence;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.Options;
 using DotNetEnv;
 Env.Load();
 
@@ -65,12 +66,20 @@ builder.Services.AddApplicationServices(builder.Configuration);
 builder.Services.AddPersistenceServices(builder.Configuration);
 builder.Services.AddIdentityServices(builder);
 builder.Services.AddHealthChecks();
+builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
 
+var supportedCultures = new[] { "en", "fr" };
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    options.SetDefaultCulture("en-US");
+    options.AddSupportedCultures(supportedCultures);
+    options.AddSupportedUICultures(supportedCultures);
+});
 
 var result = builder.Configuration.GetSection("CorsUrls").Value;
 var urls = (result != null && result.Split(',').Any()) ? result.Split(',') : Array.Empty<string>();
 
-var myAllowSpecificOrigins = "_myAllowSpecificOrigins";
+// var myAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
 //builder.Services.AddCors(options =>
 //{
@@ -87,6 +96,8 @@ var myAllowSpecificOrigins = "_myAllowSpecificOrigins";
 //});
 
 var app = builder.Build();
+var localizationOptions = app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>().Value;
+app.UseRequestLocalization(localizationOptions);
 
 app.MapHealthChecks("/security-service/health");
 
@@ -132,6 +143,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.UseCustomExceptionHandler();
+
+app.UseLocalizedMessages();
 
 app.MapControllers();
 

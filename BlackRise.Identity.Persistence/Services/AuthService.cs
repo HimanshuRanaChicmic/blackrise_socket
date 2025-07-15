@@ -7,7 +7,7 @@ using BlackRise.Identity.Application.Settings;
 using BlackRise.Identity.Domain;
 using BlackRise.Identity.Domain.Common.Enums;
 using BlackRise.Identity.Persistence.Settings;
-using BlackRise.Identity.Persistence.Utils;
+using BlackRise.Identity.Application.Utils;
 using Google.Apis.Auth;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
@@ -22,6 +22,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using BlackRise.Identity.Application.Helpers;
 
 namespace BlackRise.Identity.Persistence.Services;
 
@@ -63,27 +64,27 @@ public class AuthService : IAuthService
         var user = await _userManager.FindByEmailAsync(username);
 
         if (user == null || user.IsDeleted)
-            throw new BadRequestException(Constants.InvalidEmailPassword);
+            throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.InvalidEmailPassword));
 
         if(!user.EmailConfirmed)
-            throw new BadRequestException(Constants.EmailNotConfirmed);
+            throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.EmailNotConfirmed));
 
         if(user.IsSocialLogin)
-            throw new BadRequestException(Constants.UserAlreadyRegisteredWithSocialLogin);
+            throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.UserAlreadyRegisteredWithSocialLogin));
 
         if (user.PasswordHash == null && !user.IsSocialLogin)
-            throw new BadRequestException(Constants.UserPasswordNotSet);
+            throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.UserPasswordNotSet));
 
         if (!user.IsActive)
-            throw new BadRequestException(Constants.UserAccountDisabled);
+            throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.UserAccountDisabled));
 
         var result = await _signInManager.PasswordSignInAsync(username, password, false, false);
 
         if (result.IsNotAllowed)
-            throw new BadRequestException(Constants.EmailNotConfirmed);
+            throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.EmailNotConfirmed));
 
         if (!result.Succeeded)
-            throw new BadRequestException(Constants.InvalidUsernamePassword);
+            throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.InvalidUsernamePassword));
 
         string token = await GenerateTokenAsync(user);
 
@@ -103,7 +104,7 @@ public class AuthService : IAuthService
         var existingUser = await _userManager.FindByEmailAsync(username);
 
         if (existingUser != null)
-            throw new BadRequestException(Constants.EmailAlreadyRegistered);
+            throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.EmailAlreadyRegistered));
 
         var newUser = new ApplicationUser 
         { 
@@ -123,13 +124,13 @@ public class AuthService : IAuthService
         var result = await _userManager.CreateAsync(newUser, password);
 
         if (!result.Succeeded)
-            throw new BadRequestException($"{Constants.ErrorCreatingUser}: {result.Errors.First().Description}");
+            throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.ErrorCreatingUser));
 
         _ = await _userManager.AddToRoleAsync(newUser, Role.User.ToString());
 
         await SendEmailConfirmationCodeAsync(newUser);
 
-        return Constants.OtpSentSuccessfully;
+        return LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.OtpSentSuccessfully);
     }
 
     public async Task<string> RegisterAsync(SignupCommand signupCommand)
@@ -138,17 +139,17 @@ public class AuthService : IAuthService
         var otp = "";
 
         if (existingUser != null && existingUser.IsSocialLogin)
-            throw new BadRequestException(Constants.UserAlreadyRegisteredWithSocialLogin);
+            throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.UserAlreadyRegisteredWithSocialLogin));
 
         if (existingUser != null && existingUser.EmailConfirmed && !existingUser.IsSocialLogin && existingUser.PasswordHash != null)
-            throw new BadRequestException(Constants.EmailAlreadyRegistered);
+            throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.EmailAlreadyRegistered));
 
         if (existingUser != null)
         {
             if (existingUser.IsSocialLogin && !existingUser.IsProfileCreated)
             {
                 await CreateProfileAsync(existingUser, signupCommand);
-                return Constants.ProfileCreatedSuccessfully;
+                return LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.ProfileCreatedSuccessfully);
             }
             else
             {
@@ -188,7 +189,8 @@ public class AuthService : IAuthService
             otp = newUser.EmailConfirmationCode;
         }
 
-        return $"{Constants.OtpSentSuccessfully}: {otp ?? ""}";
+        var message=LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.OtpSentSuccessfully);
+        return $"{message}: {existingUser.EmailConfirmationCode}";
     }
 
     public async Task<Tuple<string, LoginDto>> UpdateUserPasswordAsync(string email, string password)
@@ -196,7 +198,7 @@ public class AuthService : IAuthService
         var existingUser = await _userManager.FindByEmailAsync(email);
 
         if (existingUser == null)
-            throw new BadRequestException(Constants.InvalidUserEmail);
+            throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.InvalidUserEmail));
 
         PasswordHasher<ApplicationUser> passwordHasher = new();
 
@@ -224,13 +226,13 @@ public class AuthService : IAuthService
         var existingUser = await _userManager.FindByEmailAsync(email);
 
         if (existingUser == null)
-            throw new BadRequestException(Constants.InvalidUserEmail);
+            throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.InvalidUserEmail));
 
         if (existingUser.EmailConfirmationCode != code)
-            throw new BadRequestException(Constants.InvalidOtp);
+            throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.InvalidOtp));
 
         if (existingUser.EmailConfirmationCodeExpiry < DateTime.UtcNow)
-            throw new BadRequestException(Constants.OtpExpired);
+            throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.OtpExpired));
 
         existingUser.EmailConfirmed = true;
         existingUser.EmailConfirmationCode = null;
@@ -240,33 +242,35 @@ public class AuthService : IAuthService
         if (!result.Succeeded)
             throw new BadRequestException($"Error while confirming user email {result.Errors.First().Description}");
 
-        return $"{Constants.OtpSentSuccessfully}: {existingUser.EmailConfirmationCode}";
-
+        var message=LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.OtpSentSuccessfully);
+        return $"{message}: {existingUser.EmailConfirmationCode}";
     }
     public async Task<string> ResendEmailConfirmationAsync(string email)
     {
         var existingUser = await _userManager.FindByEmailAsync(email);
 
         if (existingUser == null)
-            throw new BadRequestException(Constants.InvalidUserEmail);
+            throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.InvalidUserEmail));
 
         await SendEmailConfirmationCodeAsync(existingUser);
 
-        return $"{Constants.OtpSentSuccessfully}: {existingUser.EmailConfirmationCode}";
+        var message=LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.OtpSentSuccessfully);
+        return $"{message}: {existingUser.EmailConfirmationCode}";
     }
     public async Task<string> ResendResetPasswordCodeAsync(string email)
     {
         var existingUser = await _userManager.FindByEmailAsync(email);
 
         if (existingUser == null || existingUser.IsDeleted)
-            throw new BadRequestException(Constants.InvalidUserEmail);
+            throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.InvalidUserEmail));
 
         if (!existingUser.IsActive)
-            throw new UnAuthorizedException(Constants.UserAccountDisabled);
+            throw new UnAuthorizedException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.UserAccountDisabled));
 
         await SendPasswordResetEmailAsync(existingUser);
 
-        return $"{Constants.OtpSentSuccessfully}: {existingUser.EmailConfirmationCode}";
+        var message=LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.OtpSentSuccessfully);
+        return $"{message}: {existingUser.EmailConfirmationCode}";
     }
 
 
@@ -312,20 +316,20 @@ public class AuthService : IAuthService
         var existingUser = await _userManager.FindByEmailAsync(email);
 
         if (existingUser == null || existingUser.IsDeleted)
-            throw new BadRequestException(Constants.InvalidUserEmail);
+            throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.InvalidUserEmail));
 
         if (!existingUser.IsActive)
-            throw new UnAuthorizedException(Constants.UserAccountDisabled);
+            throw new UnAuthorizedException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.UserAccountDisabled));
 
         if(existingUser.IsSocialLogin)
-            throw new BadRequestException(Constants.PasswordResetNotAvailableForSocialLogin);
+            throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.PasswordResetNotAvailableForSocialLogin));
 
         if (!existingUser.IsSocialLogin && existingUser.PasswordHash == null)
-            throw new BadRequestException(Constants.AccountDoesNotExist);
+            throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.AccountDoesNotExist));
 
         await SendPasswordResetEmailAsync(existingUser);
 
-        return Constants.OtpSentSuccessfully;
+        return LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.OtpSentSuccessfully);
     }
 
     public async Task<string> ResetConfirmationAsync(string email, string code)
@@ -333,22 +337,22 @@ public class AuthService : IAuthService
         var existingUser = await _userManager.FindByEmailAsync(email);
 
         if (existingUser == null)
-            throw new BadRequestException(Constants.InvalidUserEmail);
+            throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.InvalidUserEmail));
 
         if (existingUser.ResetPasswordCode != code)
-            throw new BadRequestException(Constants.InvalidOtp);
+            throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.InvalidOtp));
 
         if (existingUser.ResetPasswordCodeExpiry < DateTime.UtcNow)
-            throw new BadRequestException(Constants.OtpExpired);
+            throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.OtpExpired));
 
         existingUser.ResetPasswordCode = null;
         existingUser.ResetPasswordCodeExpiry = null;
         var result = await _userManager.UpdateAsync(existingUser);
 
         if (!result.Succeeded)
-            throw new BadRequestException($"Error while confirm user email {result.Errors.First().Description}");
+            throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.ErrorCreatingUser));
 
-        return Constants.EmailValidated;
+        return LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.EmailValidated);
     }
 
 
@@ -357,7 +361,7 @@ public class AuthService : IAuthService
         var existingUser = await _userManager.FindByEmailAsync(email);
 
         if (existingUser == null || existingUser.IsDeleted)
-            throw new BadRequestException(Constants.InvalidUserEmail);
+            throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.InvalidUserEmail));
 
         var token = await _userManager.GeneratePasswordResetTokenAsync(existingUser);
 
@@ -365,7 +369,7 @@ public class AuthService : IAuthService
         var passwordHasher = _userManager.PasswordHasher;
         if (passwordHasher.VerifyHashedPassword(existingUser, existingUser.PasswordHash, password) == PasswordVerificationResult.Success)
         {
-            throw new BadRequestException(Constants.DifferentNewPassword);
+            throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.DifferentNewPassword));
         }
 
         var resetPasswordResult = await _userManager.ResetPasswordAsync(existingUser, token, password);
@@ -373,7 +377,7 @@ public class AuthService : IAuthService
         if (!resetPasswordResult.Succeeded)
             throw new BadRequestException(resetPasswordResult.Errors.First().Description);
 
-        return Constants.Success;
+        return LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.Success);
     }
 
     private async Task<string> GenerateTokenAsync(ApplicationUser user)
@@ -489,7 +493,7 @@ public class AuthService : IAuthService
 
         var json = await userInfoResponse.Content.ReadAsStringAsync();
         if (string.IsNullOrWhiteSpace(json))
-            throw new UnauthorizedAccessException(Constants.GoogleLoginNotVerified);
+            throw new UnauthorizedAccessException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.GoogleLoginNotVerified));
 
         dynamic userInfo = JsonConvert.DeserializeObject(json);
         string? email = userInfo?.email;
@@ -497,7 +501,7 @@ public class AuthService : IAuthService
         string? lastName = userInfo?.family_name;
 
         if (string.IsNullOrWhiteSpace(email))
-            throw new UnauthorizedAccessException(Constants.GoogleLoginNotVerified);
+            throw new UnauthorizedAccessException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.GoogleLoginNotVerified));
 
         return await HandleExternalLoginAsync(email, firstName, lastName);
     }
@@ -509,7 +513,7 @@ public class AuthService : IAuthService
         var linkedInUser = await GetLinkedInUserProfileAsync(gettoken);
 
         if (linkedInUser == null || string.IsNullOrEmpty(linkedInUser.Email))
-            throw new UnauthorizedAccessException(Constants.LinkedInLoginNotVerified);
+            throw new UnauthorizedAccessException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.LinkedInLoginNotVerified));
 
         return await HandleExternalLoginAsync(linkedInUser.Email, linkedInUser.FirstName, linkedInUser.LastName);
     }
@@ -567,13 +571,13 @@ public class AuthService : IAuthService
         _logger.LogInformation($"Verifying Apple ID token: {accessToken}");
         var appleJwt = await VerifyAppleIdTokenAsync(accessToken);
         if (appleJwt == null)
-            throw new UnauthorizedAccessException(Constants.AppleLoginNotVerified);
+            throw new UnauthorizedAccessException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.AppleLoginNotVerified));
 
         var email = appleJwt.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
         var userId = appleJwt.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
 
         if (string.IsNullOrEmpty(userId))
-            throw new UnauthorizedAccessException(Constants.AppleLoginNotVerified);
+            throw new UnauthorizedAccessException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.AppleLoginNotVerified));
 
         email = email ?? $"{userId}@appleid.local";
 
@@ -611,14 +615,14 @@ public class AuthService : IAuthService
             };
             var createResult = await _userManager.CreateAsync(user);
             if (!createResult.Succeeded)
-                throw new ArgumentException(Constants.CouldNotCreateAccount);
+                throw new ArgumentException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.CouldNotCreateAccount));
 
             if (isApple)
             {
                 var loginInfo = new UserLoginInfo(provider, providerUserId, provider);
                 var loginResult = await _userManager.AddLoginAsync(user, loginInfo);
                 if (!loginResult.Succeeded)
-                    throw new ArgumentException(Constants.LoginProviderNotAdded);
+                    throw new ArgumentException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.LoginProviderNotAdded));
             }
 
             await _userManager.AddToRoleAsync(user, Role.User.ToString());
@@ -626,7 +630,7 @@ public class AuthService : IAuthService
         else
         {
             if(!user.IsSocialLogin)
-                throw new BadRequestException(Constants.EmailAlreadyRegistered);
+                throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.EmailAlreadyRegistered));
         }
 
         var token = await GenerateTokenAsync(user);
