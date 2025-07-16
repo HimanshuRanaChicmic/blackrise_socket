@@ -79,7 +79,7 @@ public class LocalizedMessageMiddleware
         var result = jToken["result"];
         var message = jToken["message"];
 
-        if ((message == null || string.IsNullOrWhiteSpace(message?.ToString())) &&
+        if ((message == null || string.IsNullOrWhiteSpace(message.ToString())) &&
             result?.Type == JTokenType.String)
         {
             var originalMsg = result.ToString();
@@ -142,45 +142,58 @@ public class LocalizedMessageMiddleware
 
     private bool LocalizeField(JProperty property)
     {
-        if (property.Value.Type != JTokenType.String && property.Name != "validationErrors") return false;
+        if (property.Value.Type == JTokenType.String &&
+            (property.Name.Equals("message", StringComparison.OrdinalIgnoreCase) ||
+             property.Name.Equals("error", StringComparison.OrdinalIgnoreCase)))
+        {
+            return LocalizeSimpleField(property);
+        }
 
-        string original = property.Value.ToString();
+        if (property.Name.Equals("validationErrors", StringComparison.OrdinalIgnoreCase) &&
+            property.Value is JArray arr)
+        {
+            return LocalizeValidationErrors(arr);
+        }
+
+        return false;
+    }
+
+    private bool LocalizeSimpleField(JProperty property)
+    {
+        var original = property.Value.ToString();
+        var localized = LocalizationHelper.GetLocalizedMessageFromConstantValue(original);
+
+        _logger.LogInformation("[Localization] {0}: Original='{1}', Localized='{2}'", property.Name, original, localized);
+
+        if (localized != original)
+        {
+            property.Value = localized;
+            return true;
+        }
+
+        return false;
+    }
+
+    private bool LocalizeValidationErrors(JArray arr)
+    {
         bool changed = false;
 
-        switch (property.Name.ToLowerInvariant())
+        for (int i = 0; i < arr.Count; i++)
         {
-            case "message":
-            case "error":
-                var localized = LocalizationHelper.GetLocalizedMessageFromConstantValue(original);
-                _logger.LogInformation("[Localization] {0}: Original='{1}', Localized='{2}'", property.Name, original, localized);
-                if (localized != original)
-                {
-                    property.Value = localized;
-                    changed = true;
-                }
-                break;
+            var originalMsg = arr[i]?.ToString();
+            if (string.IsNullOrEmpty(originalMsg)) continue;
 
-            case "validationerrors":
-                if (property.Value is JArray arr)
-                {
-                    for (int i = 0; i < arr.Count; i++)
-                    {
-                        var originalMsg = arr[i]?.ToString();
-                        if (!string.IsNullOrEmpty(originalMsg))
-                        {
-                            var localizedMsg = LocalizationHelper.GetLocalizedMessageFromConstantValue(originalMsg);
-                            _logger.LogInformation("[Localization] validationError[{0}]: Original='{1}', Localized='{2}'", i, originalMsg, localizedMsg);
-                            if (localizedMsg != originalMsg)
-                            {
-                                arr[i] = localizedMsg;
-                                changed = true;
-                            }
-                        }
-                    }
-                }
-                break;
+            var localizedMsg = LocalizationHelper.GetLocalizedMessageFromConstantValue(originalMsg);
+            _logger.LogInformation("[Localization] validationError[{0}]: Original='{1}', Localized='{2}'", i, originalMsg, localizedMsg);
+
+            if (localizedMsg != originalMsg)
+            {
+                arr[i] = localizedMsg;
+                changed = true;
+            }
         }
 
         return changed;
     }
+
 }
