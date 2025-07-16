@@ -1,19 +1,7 @@
-using BlackRise.Identity.Application.DataTransferObject;
-using BlackRise.Identity.Application.Exceptions;
-using BlackRise.Identity.Application.Resources;
 using BlackRise.Identity.Application.Helpers;
-using Microsoft.AspNetCore.Http;
-using System.IO;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
-using System.Net;
-using System.Globalization;
-using Microsoft.Extensions.Logging;
 using BlackRise.Identity.Application.Utils;
-using BlackRise.Identity.Application.Helpers;
+using Newtonsoft.Json.Linq;
+using System.Text;
 
 namespace BlackRise.Identity.Middleware;
 
@@ -50,28 +38,31 @@ public class LocalizedMessageMiddleware
                     bool changed = false;
 
                     // If message is empty and result is a string, localize result and set as message
-                    if ((jToken["message"] == null || string.IsNullOrWhiteSpace(jToken["message"].ToString())) &&
-                        jToken["result"] != null && jToken["result"].Type == JTokenType.String)
+                    if ((jToken["message"] == null || string.IsNullOrWhiteSpace(jToken["message"]?.ToString())) &&
+                        jToken["result"] != null && jToken["result"]?.Type == JTokenType.String)
                     {
-                        var originalMsg = jToken["result"].ToString();
-                        var localizedMsg = LocalizationHelper.GetLocalizedMessageFromConstantValue(originalMsg);
-                        _logger.LogInformation($"[Localization] (result->message) Original='{originalMsg}', Localized='{localizedMsg}'");
-                        jToken["message"] = localizedMsg;
+                        var originalMsg = jToken["result"]?.ToString();
+                        if(originalMsg != null)
+                        {
+                            var localizedMsg = LocalizationHelper.GetLocalizedMessageFromConstantValue(originalMsg);
+                            _logger.LogInformation("[Localization] (result->message) Original={0}, Localized={1}", originalMsg, localizedMsg);
+                            jToken["message"] = localizedMsg;
 
-                        // Set result to English (default) value
-                        var key = LocalizationHelper.GetConstantKey(originalMsg);
-                        var englishMsg = LocalizationHelper.GetLocalizedMessageFromKey(key, new System.Globalization.CultureInfo("en"));
-                        jToken["result"] = englishMsg;
-                        changed = true;
+                            // Set result to English (default) value
+                            var key = LocalizationHelper.GetConstantKey(originalMsg);
+                            var englishMsg = LocalizationHelper.GetLocalizedMessageFromKey(key, new System.Globalization.CultureInfo("en"));
+                            jToken["result"] = englishMsg;
+                            changed = true;
+                        }
                     }
 
                     // Ensure 'result' is always in English if it matches the OTP message pattern
-                    if (jToken["result"] != null && jToken["result"].Type == JTokenType.String)
+                    if (jToken["result"] != null && jToken["result"]?.Type == JTokenType.String)
                     {
-                        var resultValue = jToken["result"].ToString();
+                        var resultValue = jToken["result"]?.ToString();
                         var otpPrefixLocalized = LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.OtpSentSuccessfully);
                         var otpPrefixEnglish = LocalizationHelper.GetLocalizedMessageFromKey(LocalizationHelper.GetConstantKey(Constants.OtpSentSuccessfully), new System.Globalization.CultureInfo("en"));
-                        if (resultValue.StartsWith(otpPrefixLocalized))
+                        if (resultValue != null && resultValue.StartsWith(otpPrefixLocalized))
                         {
                             // Extract the code part (e.g., ": 663027")
                             var codePart = resultValue.Substring(otpPrefixLocalized.Length);
@@ -91,7 +82,7 @@ public class LocalizedMessageMiddleware
                                 {
                                     var originalMsg = property.Value.ToString();
                                     var localizedMsg = LocalizationHelper.GetLocalizedMessageFromConstantValue(originalMsg);
-                                    _logger.LogInformation($"[Localization] message: Original='{originalMsg}', Localized='{localizedMsg}'");
+                                    _logger.LogInformation("[Localization] message: Original='{0}', Localized='{1}'", originalMsg, localizedMsg);
                                     if (localizedMsg != originalMsg)
                                     {
                                         property.Value = localizedMsg;
@@ -102,7 +93,7 @@ public class LocalizedMessageMiddleware
                                 {
                                     var originalMsg = property.Value.ToString();
                                     var localizedMsg = LocalizationHelper.GetLocalizedMessageFromConstantValue(originalMsg);
-                                    _logger.LogInformation($"[Localization] error: Original='{originalMsg}', Localized='{localizedMsg}'");
+                                    _logger.LogInformation("[Localization] error: Original='{0}', Localized='{1}'", originalMsg, localizedMsg);
                                     if (localizedMsg != originalMsg)
                                     {
                                         property.Value = localizedMsg;
@@ -118,7 +109,7 @@ public class LocalizedMessageMiddleware
                                         if (!string.IsNullOrEmpty(originalMsg))
                                         {
                                             var localizedMsg = LocalizationHelper.GetLocalizedMessageFromConstantValue(originalMsg);
-                                            _logger.LogInformation($"[Localization] validationError[{i}]: Original='{originalMsg}', Localized='{localizedMsg}'");
+                                            _logger.LogInformation("[Localization] validationError[{0}]: Original='{1}', Localized='{2}'", i, originalMsg, localizedMsg);
                                             if (localizedMsg != originalMsg)
                                             {
                                                 arr[i] = localizedMsg;

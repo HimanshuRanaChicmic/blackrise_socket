@@ -190,7 +190,7 @@ public class AuthService : IAuthService
         }
 
         var message=LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.OtpSentSuccessfully);
-        return $"{message}: {existingUser.EmailConfirmationCode}";
+        return $"{message}: {otp}";
     }
 
     public async Task<Tuple<string, LoginDto>> UpdateUserPasswordAsync(string email, string password)
@@ -329,7 +329,7 @@ public class AuthService : IAuthService
 
         await SendPasswordResetEmailAsync(existingUser);
 
-        return LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.OtpSentSuccessfully);
+        return $"{LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.OtpSentSuccessfully)}: {existingUser.EmailConfirmationCode}";
     }
 
     public async Task<string> ResetConfirmationAsync(string email, string code)
