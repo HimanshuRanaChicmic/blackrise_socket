@@ -55,6 +55,10 @@
           "valueFrom": "arn:aws:secretsmanager:eu-west-2:625073454551:secret:tbr-security-service-stage-f5dhu0:LINKEDIN_CLIENT_SECRET:AWSCURRENT:"
         },
         {
+          "name": "LINKEDIN_REDIRECT_URI",
+          "valueFrom": "arn:aws:secretsmanager:eu-west-2:625073454551:secret:tbr-security-service-stage-f5dhu0:LINKEDIN_REDIRECT_URI:AWSCURRENT:"
+        },
+        {
           "name": "JWT_KEY",
           "valueFrom": "arn:aws:secretsmanager:eu-west-2:625073454551:secret:tbr-security-service-stage-f5dhu0:JWT_KEY:AWSCURRENT:"
         },
@@ -65,6 +69,30 @@
         {
           "name": "JWT_LINKEDIN_CLIENT_SECRET",
           "valueFrom": "arn:aws:secretsmanager:eu-west-2:625073454551:secret:tbr-security-service-stage-f5dhu0:JWT_LINKEDIN_CLIENT_SECRET:AWSCURRENT:"
+        },
+        {
+          "name": "CLIENT_URL_EMAIL_CONFIRMATION",
+          "valueFrom": "arn:aws:secretsmanager:eu-west-2:625073454551:secret:tbr-security-service-stage-f5dhu0:CLIENT_URL_EMAIL_CONFIRMATION:AWSCURRENT:"
+        },
+        {
+          "name": "CLIENT_URL_RESET_PASSWORD",
+          "valueFrom": "arn:aws:secretsmanager:eu-west-2:625073454551:secret:tbr-security-service-stage-f5dhu0:CLIENT_URL_RESET_PASSWORD:AWSCURRENT:"
+        },
+        {
+          "name": "CLIENT_URL_LOGIN",
+          "valueFrom": "arn:aws:secretsmanager:eu-west-2:625073454551:secret:tbr-security-service-stage-f5dhu0:CLIENT_URL_LOGIN:AWSCURRENT:"
+        },
+        {
+          "name": "CLIENT_URL_LOGIN_REDIRECT",
+          "valueFrom": "arn:aws:secretsmanager:eu-west-2:625073454551:secret:tbr-security-service-stage-f5dhu0:CLIENT_URL_LOGIN_REDIRECT:AWSCURRENT:"
+        },
+        {
+          "name": "CLIENT_URL_SENDER_URL",
+          "valueFrom": "arn:aws:secretsmanager:eu-west-2:625073454551:secret:tbr-security-service-stage-f5dhu0:CLIENT_URL_SENDER_URL:AWSCURRENT:"
+        },
+        {
+          "name": "CLIENT_URL_PROFILE_URL",
+          "valueFrom": "arn:aws:secretsmanager:eu-west-2:625073454551:secret:tbr-security-service-stage-f5dhu0:CLIENT_URL_PROFILE_URL:AWSCURRENT:"
         }
       ],
       "logConfiguration": {
