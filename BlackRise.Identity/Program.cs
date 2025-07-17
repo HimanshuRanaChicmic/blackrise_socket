@@ -31,11 +31,19 @@ builder.Configuration["EmailSettings:Port"] = Environment.GetEnvironmentVariable
 
 builder.Configuration["LinkedInSetting:LinkedInClientId"] = Environment.GetEnvironmentVariable("LINKEDIN_CLIENT_ID");
 builder.Configuration["LinkedInSetting:LinkedInClientSecret"] = Environment.GetEnvironmentVariable("LINKEDIN_CLIENT_SECRET");
+builder.Configuration["LinkedInSetting:LinkedInRedirectUri"] = Environment.GetEnvironmentVariable("LINKEDIN_REDIRECT_URI");
 
 builder.Configuration["JwtSettings:Key"] = Environment.GetEnvironmentVariable("JWT_KEY");
 builder.Configuration["JwtSettings:LinkedInClientId"] = Environment.GetEnvironmentVariable("JWT_LINKEDIN_CLIENT_ID");
 builder.Configuration["JwtSettings:LinkedInClientSecret"] = Environment.GetEnvironmentVariable("JWT_LINKEDIN_CLIENT_SECRET");
 
+// Set ClientUrlSettings from environment variables
+builder.Configuration["ClientUrlSettings:EmailConfirmation"] = Environment.GetEnvironmentVariable("CLIENT_URL_EMAIL_CONFIRMATION");
+builder.Configuration["ClientUrlSettings:ResetPassword"] = Environment.GetEnvironmentVariable("CLIENT_URL_RESET_PASSWORD");
+builder.Configuration["ClientUrlSettings:Login"] = Environment.GetEnvironmentVariable("CLIENT_URL_LOGIN");
+builder.Configuration["ClientUrlSettings:LoginRedirect"] = Environment.GetEnvironmentVariable("CLIENT_URL_LOGIN_REDIRECT");
+builder.Configuration["ClientUrlSettings:SenderUrl"] = Environment.GetEnvironmentVariable("CLIENT_URL_SENDER_URL");
+builder.Configuration["ClientUrlSettings:ProfileUrl"] = Environment.GetEnvironmentVariable("CLIENT_URL_PROFILE_URL");
 
 builder.Services.AddControllers(options =>
 {
