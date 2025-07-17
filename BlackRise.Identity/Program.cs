@@ -45,6 +45,17 @@ builder.Configuration["ClientUrlSettings:LoginRedirect"] = Environment.GetEnviro
 builder.Configuration["ClientUrlSettings:SenderUrl"] = Environment.GetEnvironmentVariable("CLIENT_URL_SENDER_URL");
 builder.Configuration["ClientUrlSettings:ProfileUrl"] = Environment.GetEnvironmentVariable("CLIENT_URL_PROFILE_URL");
 
+// Log all new env variables for testing
+Console.WriteLine($"ClientUrlSettings:EmailConfirmation: {builder.Configuration["ClientUrlSettings:EmailConfirmation"]}");
+Console.WriteLine($"ClientUrlSettings:ResetPassword: {builder.Configuration["ClientUrlSettings:ResetPassword"]}");
+Console.WriteLine($"ClientUrlSettings:Login: {builder.Configuration["ClientUrlSettings:Login"]}");
+Console.WriteLine($"ClientUrlSettings:LoginRedirect: {builder.Configuration["ClientUrlSettings:LoginRedirect"]}");
+Console.WriteLine($"ClientUrlSettings:SenderUrl: {builder.Configuration["ClientUrlSettings:SenderUrl"]}");
+Console.WriteLine($"ClientUrlSettings:ProfileUrl: {builder.Configuration["ClientUrlSettings:ProfileUrl"]}");
+Console.WriteLine($"ClientUrlSettings:EmailConfirmationTokenExpire: {builder.Configuration["ClientUrlSettings:EmailConfirmationTokenExpire"]}");
+Console.WriteLine($"ClientUrlSettings:ResetPasswordTokenExpire: {builder.Configuration["ClientUrlSettings:ResetPasswordTokenExpire"]}");
+Console.WriteLine($"LinkedInSetting:LinkedInRedirectUri: {builder.Configuration["LinkedInSetting:LinkedInRedirectUri"]}");
+
 builder.Services.AddControllers(options =>
 {
     options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
