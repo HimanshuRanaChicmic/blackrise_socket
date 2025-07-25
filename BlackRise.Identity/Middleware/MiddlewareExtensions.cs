@@ -6,4 +6,9 @@ public static class MiddlewareExtensions
     {
         return builder.UseMiddleware<ExceptionHandlerMiddleware>();
     }
+
+    public static IApplicationBuilder UseLocalizedMessages(this IApplicationBuilder builder)
+    {
+        return builder.UseMiddleware<LocalizedMessageMiddleware>();
+    }
 }

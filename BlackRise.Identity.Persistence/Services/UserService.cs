@@ -3,7 +3,8 @@ using BlackRise.Identity.Application.Exceptions;
 using BlackRise.Identity.Application.Feature.User;
 using BlackRise.Identity.Application.Feature.User.Commands.ProfileStatus;
 using BlackRise.Identity.Domain;
-using BlackRise.Identity.Persistence.Utils;
+using BlackRise.Identity.Application.Utils;
+using BlackRise.Identity.Application.Helpers;
 using Microsoft.AspNetCore.Identity;
 
 namespace BlackRise.Identity.Persistence.Services
@@ -19,7 +20,7 @@ namespace BlackRise.Identity.Persistence.Services
         {
             var user = await _userManager.FindByIdAsync(userId.ToString());
             if (user == null)
-                throw new NotFoundException(Constants.UserNotFound);
+                throw new NotFoundException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.UserNotFound));
             return new UserDto
             {
                 Id = user.Id,
@@ -36,7 +37,7 @@ namespace BlackRise.Identity.Persistence.Services
         {
             var user = await _userManager.FindByIdAsync(request.Id.ToString());
             if (user == null)
-                throw new NotFoundException(Constants.UserNotFound);
+                throw new NotFoundException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.UserNotFound));
 
             user.IsProfileCreated = request.IsProfileCreated == true;
             var result = await _userManager.UpdateAsync(user);
@@ -44,13 +45,13 @@ namespace BlackRise.Identity.Persistence.Services
             if (!result.Succeeded)
                 throw new BadRequestException($"Error while confirm user email {result.Errors.First().Description}");
 
-            return Constants.Success;
+            return LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.Success);
         }
         public async Task<string> UpdateUserProfileCompleteStatus(ProfileCompleteStatusCommand request)
         {
             var user = await _userManager.FindByIdAsync(request.Id.ToString());
             if (user == null)
-                throw new NotFoundException(Constants.UserNotFound);
+                throw new NotFoundException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.UserNotFound));
 
             user.IsProfileCompleted = request.IsProfileCompleted == true;
             var result = await _userManager.UpdateAsync(user);
@@ -58,7 +59,7 @@ namespace BlackRise.Identity.Persistence.Services
             if (!result.Succeeded)
                 throw new BadRequestException($"Error while confirm user email {result.Errors.First().Description}");
 
-            return Constants.Success;
+            return LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.Success);
         }
     }
 }
