@@ -1,4 +1,7 @@
-﻿namespace BlackRise.Identity.Persistence.Utils
+using BlackRise.Identity.Application.Utils;
+using BlackRise.Identity.Application.Helpers;
+
+namespace BlackRise.Identity.Application.Utils
 {
     public static class Constants
     {
