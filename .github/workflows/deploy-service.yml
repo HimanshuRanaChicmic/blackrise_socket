@@ -1,0 +1,73 @@
+name: Reusable Build and Deploy Service
+
+on:
+  workflow_call:
+    inputs:
+      github_environment_name:
+        required: true
+        type: string
+      aws_environment_name:
+        required: true
+        type: string
+      service_name:
+        required: true
+        type: string
+      container_name:
+        required: true
+        type: string
+      dockerfile_path:
+        required: true
+        type: string
+    secrets:
+      AWS_ROLE_TO_ASSUME:
+        required: true
+
+jobs:
+  deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.github_environment_name }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: eu-west-2
+          role-session-name: GitHub-Actions-Deploy
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, Tag, and Push Image to Amazon ECR
+        id: build-image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ inputs.dockerfile_path }}
+          push: true
+          tags: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.service_name }}-${{ inputs.aws_environment_name }}:${{ github.sha }}
+
+      - name: Download Latest ECS Task Definition from AWS
+        run: |
+          aws ecs describe-task-definition --task-definition ${{ inputs.service_name }}-${{ inputs.aws_environment_name }} --query taskDefinition > task-definition.json
+
+      - name: Render New Task Definition with Updated Image
+        id: render-task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: ${{ inputs.container_name }}
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.service_name }}-${{ inputs.aws_environment_name }}:${{ github.sha }}
+
+      - name: Deploy to Amazon ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.render-task-def.outputs.task-definition }}
+          service: ${{ inputs.service_name }}-${{ inputs.aws_environment_name }}
+          cluster: tbr-ecs-cluster-${{ inputs.aws_environment_name }}
+          wait-for-service-stability: false
