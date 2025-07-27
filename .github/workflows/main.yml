@@ -1,0 +1,44 @@
+name: Detect Branch and Trigger Deployment
+
+on:
+  push:
+    branches:
+      - dev
+      - staging
+
+jobs:
+  determine-names:
+    name: Determine Environment Names
+    runs-on: ubuntu-latest
+    outputs:
+      github_env: ${{ steps.get_names.outputs.github_env }}
+      aws_env: ${{ steps.get_names.outputs.aws_env }}
+    steps:
+      - name: Set environment names based on branch
+        id: get_names
+        run: |
+          BRANCH_NAME="${{ github.ref_name }}"
+          if [[ "$BRANCH_NAME" == "staging" ]]; then
+            echo "github_env=staging" >> $GITHUB_OUTPUT
+            echo "aws_env=stage" >> $GITHUB_OUTPUT
+          else
+            echo "github_env=$BRANCH_NAME" >> $GITHUB_OUTPUT
+            echo "aws_env=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          fi
+
+  call-reusable-workflow:
+    name: Deploy to ${{ github.ref_name }}
+    needs: determine-names
+    permissions:
+      id-token: write
+      contents: read
+
+    uses: ./.github/workflows/deploy-service.yml
+    with:
+      github_environment_name: ${{ needs.determine-names.outputs.github_env }}
+      aws_environment_name: ${{ needs.determine-names.outputs.aws_env }}
+      service_name: "tbr-security-service"
+      container_name: "security-service"
+      dockerfile_path: "BlackRise.Identity/Dockerfile"
+    secrets:
+      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
