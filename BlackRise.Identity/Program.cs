@@ -7,6 +7,7 @@ using BlackRise.Identity.Persistence;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.Options;
 using DotNetEnv;
 Env.Load();
 
@@ -31,11 +32,30 @@ builder.Configuration["EmailSettings:Port"] = Environment.GetEnvironmentVariable
 
 builder.Configuration["LinkedInSetting:LinkedInClientId"] = Environment.GetEnvironmentVariable("LINKEDIN_CLIENT_ID");
 builder.Configuration["LinkedInSetting:LinkedInClientSecret"] = Environment.GetEnvironmentVariable("LINKEDIN_CLIENT_SECRET");
+builder.Configuration["LinkedInSetting:LinkedInRedirectUri"] = Environment.GetEnvironmentVariable("LINKEDIN_REDIRECT_URI");
 
 builder.Configuration["JwtSettings:Key"] = Environment.GetEnvironmentVariable("JWT_KEY");
 builder.Configuration["JwtSettings:LinkedInClientId"] = Environment.GetEnvironmentVariable("JWT_LINKEDIN_CLIENT_ID");
 builder.Configuration["JwtSettings:LinkedInClientSecret"] = Environment.GetEnvironmentVariable("JWT_LINKEDIN_CLIENT_SECRET");
 
+// Set ClientUrlSettings from environment variables
+builder.Configuration["ClientUrlSettings:EmailConfirmation"] = Environment.GetEnvironmentVariable("CLIENT_URL_EMAIL_CONFIRMATION");
+builder.Configuration["ClientUrlSettings:ResetPassword"] = Environment.GetEnvironmentVariable("CLIENT_URL_RESET_PASSWORD");
+builder.Configuration["ClientUrlSettings:Login"] = Environment.GetEnvironmentVariable("CLIENT_URL_LOGIN");
+builder.Configuration["ClientUrlSettings:LoginRedirect"] = Environment.GetEnvironmentVariable("CLIENT_URL_LOGIN_REDIRECT");
+builder.Configuration["ClientUrlSettings:SenderUrl"] = Environment.GetEnvironmentVariable("CLIENT_URL_SENDER_URL");
+builder.Configuration["ClientUrlSettings:ProfileUrl"] = Environment.GetEnvironmentVariable("CLIENT_URL_PROFILE_URL");
+
+// Log all new env variables for testing
+Console.WriteLine($"ClientUrlSettings:EmailConfirmation: {builder.Configuration["ClientUrlSettings:EmailConfirmation"]}");
+Console.WriteLine($"ClientUrlSettings:ResetPassword: {builder.Configuration["ClientUrlSettings:ResetPassword"]}");
+Console.WriteLine($"ClientUrlSettings:Login: {builder.Configuration["ClientUrlSettings:Login"]}");
+Console.WriteLine($"ClientUrlSettings:LoginRedirect: {builder.Configuration["ClientUrlSettings:LoginRedirect"]}");
+Console.WriteLine($"ClientUrlSettings:SenderUrl: {builder.Configuration["ClientUrlSettings:SenderUrl"]}");
+Console.WriteLine($"ClientUrlSettings:ProfileUrl: {builder.Configuration["ClientUrlSettings:ProfileUrl"]}");
+Console.WriteLine($"ClientUrlSettings:EmailConfirmationTokenExpire: {builder.Configuration["ClientUrlSettings:EmailConfirmationTokenExpire"]}");
+Console.WriteLine($"ClientUrlSettings:ResetPasswordTokenExpire: {builder.Configuration["ClientUrlSettings:ResetPasswordTokenExpire"]}");
+Console.WriteLine($"LinkedInSetting:LinkedInRedirectUri: {builder.Configuration["LinkedInSetting:LinkedInRedirectUri"]}");
 
 builder.Services.AddControllers(options =>
 {
@@ -65,12 +85,20 @@ builder.Services.AddApplicationServices(builder.Configuration);
 builder.Services.AddPersistenceServices(builder.Configuration);
 builder.Services.AddIdentityServices(builder);
 builder.Services.AddHealthChecks();
+builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
 
+var supportedCultures = new[] { "en", "fr" };
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    options.SetDefaultCulture("en-US");
+    options.AddSupportedCultures(supportedCultures);
+    options.AddSupportedUICultures(supportedCultures);
+});
 
 var result = builder.Configuration.GetSection("CorsUrls").Value;
 var urls = (result != null && result.Split(',').Any()) ? result.Split(',') : Array.Empty<string>();
 
-var myAllowSpecificOrigins = "_myAllowSpecificOrigins";
+// var myAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
 //builder.Services.AddCors(options =>
 //{
@@ -87,6 +115,8 @@ var myAllowSpecificOrigins = "_myAllowSpecificOrigins";
 //});
 
 var app = builder.Build();
+var localizationOptions = app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>().Value;
+app.UseRequestLocalization(localizationOptions);
 
 app.MapHealthChecks("/security-service/health");
 
@@ -132,6 +162,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.UseCustomExceptionHandler();
+
+app.UseLocalizedMessages();
 
 app.MapControllers();
 
