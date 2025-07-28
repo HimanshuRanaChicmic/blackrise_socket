@@ -329,7 +329,7 @@ public class AuthService : IAuthService
 
         await SendPasswordResetEmailAsync(existingUser);
 
-        return $"{LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.OtpSentSuccessfully)}: {existingUser.EmailConfirmationCode}";
+        return $"{LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.OtpSentSuccessfully)}: {existingUser.ResetPasswordCode}";
     }
 
     public async Task<string> ResetConfirmationAsync(string email, string code)
