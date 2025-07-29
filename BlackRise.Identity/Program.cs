@@ -163,6 +163,8 @@ app.UseAuthorization();
 
 app.UseCustomExceptionHandler();
 
+app.UseStandardizedResponses();
+
 app.UseLocalizedMessages();
 
 app.MapControllers();

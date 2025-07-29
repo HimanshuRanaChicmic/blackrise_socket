@@ -189,6 +189,21 @@
 		<value>Le compte existe déjà. Veuillez continuer à utiliser votre connexion sociale.</value>
 	</data>
 	<data name="PasswordResetNotAvailableForSocialLogin" xml:space="preserve">
-		<value>La réinitialisation du mot de passe n'est pas disponible pour les comptes créés via une connexion sociale. Veuillez continuer à vous connecter avec votre compte social.</value>
+		<value>La réinitialisation du mot de passe n'est pas disponible pour les comptes créés via la connexion sociale. Veuillez continuer à vous connecter en utilisant votre compte social.</value>
+	</data>
+	<data name="OperationCompletedSuccessfully" xml:space="preserve">
+		<value>Opération terminée avec succès</value>
+	</data>
+	<data name="UnauthorizedAccess" xml:space="preserve">
+		<value>Accès non autorisé</value>
+	</data>
+	<data name="AccessForbidden" xml:space="preserve">
+		<value>Accès interdit</value>
+	</data>
+	<data name="ResourceNotFound" xml:space="preserve">
+		<value>Ressource introuvable</value>
+	</data>
+	<data name="InternalServerErrorOccurred" xml:space="preserve">
+		<value>Une erreur interne du serveur s'est produite</value>
 	</data>
 </root>

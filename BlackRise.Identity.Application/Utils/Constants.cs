@@ -36,5 +36,12 @@ namespace BlackRise.Identity.Application.Utils
         public const string ProfileCreatedSuccessfully = "Profile created Successfully";
         public const string UserAlreadyRegisteredWithSocialLogin = "Account already exists. Please continue using your social login.";
         public const string PasswordResetNotAvailableForSocialLogin = "Password reset is not available for accounts created via social login. Please continue signing in using your social account.";
+
+        // Standardized response constants
+        public const string OperationCompletedSuccessfully = "Operation completed successfully";
+        public const string UnauthorizedAccess = "Unauthorized access";
+        public const string AccessForbidden = "Access forbidden";
+        public const string ResourceNotFound = "Resource not found";
+        public const string InternalServerErrorOccurred = "An internal server error occurred";
     }
 }
