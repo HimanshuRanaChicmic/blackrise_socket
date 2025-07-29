@@ -66,13 +66,24 @@ public class StandardizedResponseMiddleware
 
             // Only process if it's a JSON response and hasn't been written
             if (!context.Response.HasStarted && 
-                context.Response.ContentType?.Contains("application/json") == true && 
+                (context.Response.ContentType?.Contains("application/json") == true || 
+                 context.Response.ContentType?.Contains("text/plain") == true) && 
                 context.Response.StatusCode >= 200 && context.Response.StatusCode < 300)
             {
                 try
                 {
                     // Parse the original response
-                    var originalData = JsonConvert.DeserializeObject(responseBody);
+                    object? originalData;
+                    
+                    if (context.Response.ContentType?.Contains("application/json") == true)
+                    {
+                        originalData = JsonConvert.DeserializeObject(responseBody);
+                    }
+                    else
+                    {
+                        // For text/plain, treat the entire response as the data
+                        originalData = responseBody.Trim();
+                    }
                     
                     // Check if the original response already has a message property
                     string? customMessage = null;
