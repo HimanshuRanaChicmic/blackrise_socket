@@ -11,6 +11,13 @@ namespace BlackRise.Identity.Persistence.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            // Update UserName to match Email for all users
+            migrationBuilder.Sql(@"
+                UPDATE ""Users"" 
+                SET ""UserName"" = ""Email"" 
+                WHERE ""UserName"" != ""Email"" OR ""UserName"" IS NULL
+            ");
+
             // Update NormalizedUserName to match NormalizedEmail for all users
             migrationBuilder.Sql(@"
                 UPDATE ""Users"" 
