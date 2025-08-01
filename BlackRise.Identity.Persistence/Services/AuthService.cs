@@ -130,7 +130,7 @@ public class AuthService : IAuthService
 
         await SendEmailConfirmationCodeAsync(newUser);
 
-        return LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.OtpSentSuccessfully);
+        return $"{LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.OtpSentSuccessfully)}: {newUser.EmailConfirmationCode}";
     }
 
     public async Task<string> RegisterAsync(SignupCommand signupCommand)
@@ -270,7 +270,7 @@ public class AuthService : IAuthService
         await SendPasswordResetEmailAsync(existingUser);
 
         var message=LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.OtpSentSuccessfully);
-        return $"{message}: {existingUser.EmailConfirmationCode}";
+        return $"{message}: {existingUser.ResetPasswordCode}";
     }
 
 
