@@ -51,7 +51,7 @@ public static class ResponseBuilder
     /// <returns>StandardizedResponse with success=false, no data</returns>
     public static StandardizedResponse<T> Error<T>(int statusCode, string message)
     {
-        return new StandardizedResponse<T>(false, statusCode, default, message);
+        return new StandardizedResponse<T>(false, statusCode, default(T), message);
     }
 
     /// <summary>

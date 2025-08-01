@@ -66,54 +66,25 @@ public class StandardizedResponseMiddleware
 
             // Only process if it's a JSON response and hasn't been written
             if (!context.Response.HasStarted && 
-                (context.Response.ContentType?.Contains("application/json") == true || 
-                 context.Response.ContentType?.Contains("text/plain") == true) && 
-                context.Response.StatusCode >= 200 && context.Response.StatusCode < 300)
+                context.Response.ContentType?.Contains("application/json") == true)
             {
                 try
                 {
-                    // Parse the original response
-                    object? originalData;
-                    
-                    if (context.Response.ContentType?.Contains("application/json") == true)
+                    // Handle success responses (200-299)
+                    if (context.Response.StatusCode >= 200 && context.Response.StatusCode < 300)
                     {
-                        originalData = JsonConvert.DeserializeObject(responseBody);
+                        await ProcessSuccessResponse(context, memoryStream, originalBodyStream, responseBody);
+                    }
+                    // Handle error responses (400+)
+                    else if (context.Response.StatusCode >= 400)
+                    {
+                        await ProcessErrorResponse(context, memoryStream, originalBodyStream, responseBody);
                     }
                     else
                     {
-                        // For text/plain, treat the entire response as the data
-                        originalData = responseBody.Trim();
+                        // Return original response for other status codes
+                        await CopyOriginalResponse(context, memoryStream, originalBodyStream);
                     }
-                    
-                    // Check if the original response already has a message property
-                    string? customMessage = null;
-                    if (originalData is Newtonsoft.Json.Linq.JObject jObject)
-                    {
-                        var messageToken = jObject["message"];
-                        if (messageToken != null)
-                        {
-                            customMessage = messageToken.ToString();
-                            // Remove the message from the original data since it will be in the standardized response
-                            jObject.Remove("message");
-                            originalData = jObject;
-                        }
-                    }
-                    
-                    // Create standardized response using ResponseBuilder with custom message if provided
-                    var standardizedResponse = customMessage != null 
-                        ? ResponseBuilder.Success(originalData, customMessage)
-                        : ResponseBuilder.Success(originalData);
-
-                    // Serialize the standardized response
-                    var standardizedJson = JsonConvert.SerializeObject(standardizedResponse, Formatting.Indented);
-                    var standardizedBytes = Encoding.UTF8.GetBytes(standardizedJson);
-
-                    // Reset the response
-                    context.Response.Body = originalBodyStream;
-                    context.Response.ContentLength = standardizedBytes.Length;
-                    context.Response.ContentType = "application/json";
-
-                    await context.Response.Body.WriteAsync(standardizedBytes, 0, standardizedBytes.Length);
                 }
                 catch (JsonException)
                 {
@@ -123,7 +94,7 @@ public class StandardizedResponseMiddleware
             }
             else
             {
-                // Return original response for non-JSON or error responses
+                // Return original response for non-JSON responses
                 await CopyOriginalResponse(context, memoryStream, originalBodyStream);
             }
         }
@@ -132,6 +103,89 @@ public class StandardizedResponseMiddleware
             // If the stream is already disposed, just restore the original body
             context.Response.Body = originalBodyStream;
         }
+    }
+
+    private static async Task ProcessSuccessResponse(HttpContext context, MemoryStream memoryStream, Stream originalBodyStream, string responseBody)
+    {
+        // Parse the original response
+        var originalData = JsonConvert.DeserializeObject(responseBody);
+        
+        // Check if the original response already has a message property
+        string? customMessage = null;
+        if (originalData is Newtonsoft.Json.Linq.JObject jObject)
+        {
+            var messageToken = jObject["message"];
+            if (messageToken != null)
+            {
+                customMessage = messageToken.ToString();
+                // Remove the message from the original data since it will be in the standardized response
+                jObject.Remove("message");
+                originalData = jObject;
+            }
+        }
+        
+        // Create standardized response using ResponseBuilder with custom message if provided
+        var standardizedResponse = customMessage != null 
+            ? ResponseBuilder.Success(originalData, customMessage)
+            : ResponseBuilder.Success(originalData);
+
+        await WriteStandardizedResponse(context, originalBodyStream, standardizedResponse);
+    }
+
+    private static async Task ProcessErrorResponse(HttpContext context, MemoryStream memoryStream, Stream originalBodyStream, string responseBody)
+    {
+        try
+        {
+            // Parse the original error response
+            var originalData = JsonConvert.DeserializeObject(responseBody);
+            
+            string errorMessage = "An error occurred";
+            
+            // Extract error message from different possible formats
+            if (originalData is Newtonsoft.Json.Linq.JObject jObject)
+            {
+                var errorToken = jObject["error"];
+                var messageToken = jObject["message"];
+                var validationErrorsToken = jObject["validationErrors"];
+                
+                if (errorToken != null)
+                {
+                    errorMessage = errorToken.ToString();
+                }
+                else if (messageToken != null)
+                {
+                    errorMessage = messageToken.ToString();
+                }
+                else if (validationErrorsToken != null)
+                {
+                    errorMessage = validationErrorsToken.ToString();
+                }
+            }
+            
+            // Create standardized error response
+            var standardizedResponse = ResponseBuilder.Error<object>(context.Response.StatusCode, errorMessage);
+            
+            await WriteStandardizedResponse(context, originalBodyStream, standardizedResponse);
+        }
+        catch (Exception)
+        {
+            // If parsing fails, return the original response
+            await CopyOriginalResponse(context, memoryStream, originalBodyStream);
+        }
+    }
+
+    private static async Task WriteStandardizedResponse(HttpContext context, Stream originalBodyStream, object standardizedResponse)
+    {
+        // Serialize the standardized response
+        var standardizedJson = JsonConvert.SerializeObject(standardizedResponse, Formatting.Indented);
+        var standardizedBytes = Encoding.UTF8.GetBytes(standardizedJson);
+
+        // Reset the response
+        context.Response.Body = originalBodyStream;
+        context.Response.ContentLength = standardizedBytes.Length;
+        context.Response.ContentType = "application/json";
+
+        await context.Response.Body.WriteAsync(standardizedBytes, 0, standardizedBytes.Length);
     }
 
     private static async Task CopyOriginalResponse(HttpContext context, MemoryStream memoryStream, Stream originalBodyStream)
