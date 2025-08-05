@@ -199,10 +199,10 @@ public class AuthService : IAuthService
         if (existingUser == null)
             throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.InvalidUserEmail));
 
-        if (!existingUser.IsResetCodeConfirmed)
+        if (!existingUser.EmailConfirmed)
             throw new UnAuthorizedException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.PleaseConfirmYourEmailFirst));
 
-        if (DateTime.UtcNow > existingUser.LastResetCodeConfirmTime?.AddHours(1))
+        if (DateTime.UtcNow > existingUser.LastEmailCodeConfirmTime?.AddHours(1))
             throw new UnAuthorizedException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.SessionExpiredPleaseTryAgain));
 
         PasswordHasher<ApplicationUser> passwordHasher = new();
@@ -243,6 +243,7 @@ public class AuthService : IAuthService
         existingUser.EmailConfirmed = true;
         existingUser.EmailConfirmationCode = null;
         existingUser.EmailConfirmationCodeExpiry = null;
+        existingUser.LastEmailCodeConfirmTime = DateTime.UtcNow;
         var result = await _userManager.UpdateAsync(existingUser);
 
         if (!result.Succeeded)
