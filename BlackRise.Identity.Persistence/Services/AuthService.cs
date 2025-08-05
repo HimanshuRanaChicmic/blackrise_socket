@@ -295,6 +295,7 @@ public class AuthService : IAuthService
             signupCommand?.DateOfBirth,
             signupCommand?.IsReceiveBlackRiseEmails,
             signupCommand?.IsReconnectWithEmail,
+            signupCommand?.Title
         };
 
         await _httpWrapper.PostAsync<object, object>(profileUrl, profileObj);
