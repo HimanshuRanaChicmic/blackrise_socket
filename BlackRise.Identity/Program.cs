@@ -143,10 +143,10 @@ app.Use(async (context, next) =>
     var origin = context.Request.Headers["Origin"];
     if (!string.IsNullOrEmpty(origin))
     {
-        context.Response.Headers.Add("Access-Control-Allow-Origin", origin);
-        context.Response.Headers.Add("Access-Control-Allow-Credentials", "true");
-        context.Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Authorization");
-        context.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
+        context.Response.Headers.Append("Access-Control-Allow-Origin", origin);
+        context.Response.Headers.Append("Access-Control-Allow-Credentials", "true");
+        context.Response.Headers.Append("Access-Control-Allow-Headers", "Content-Type, Authorization");
+        context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
     }
 
     // Handle preflight request
@@ -160,6 +160,8 @@ app.Use(async (context, next) =>
 });
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseStandardizedResponses();
 
 app.UseCustomExceptionHandler();
 

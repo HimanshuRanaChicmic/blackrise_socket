@@ -11,4 +11,9 @@ public static class MiddlewareExtensions
     {
         return builder.UseMiddleware<LocalizedMessageMiddleware>();
     }
+
+    public static IApplicationBuilder UseStandardizedResponses(this IApplicationBuilder builder)
+    {
+        return builder.UseMiddleware<StandardizedResponseMiddleware>();
+    }
 }

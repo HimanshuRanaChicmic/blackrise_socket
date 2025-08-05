@@ -210,4 +210,19 @@
 	<data name="PasswordResetNotAvailableForSocialLogin" xml:space="preserve">
     <value>Password reset is not available for accounts created via social login. Please continue signing in using your social account.</value>
   </data>
+	<data name="OperationCompletedSuccessfully" xml:space="preserve">
+  		<value>Operation completed successfully</value>
+	</data>
+	<data name="UnauthorizedAccess" xml:space="preserve">
+  		<value>Unauthorized access</value>
+	</data>
+	<data name="AccessForbidden" xml:space="preserve">
+  		<value>Access forbidden</value>
+	</data>
+	<data name="ResourceNotFound" xml:space="preserve">
+  		<value>Resource not found</value>
+	</data>
+	<data name="InternalServerErrorOccurred" xml:space="preserve">
+  		<value>An internal server error occurred</value>
+	</data>
 </root>
