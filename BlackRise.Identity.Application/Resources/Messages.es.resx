@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
-	<!-- 
+  <!-- 
     Microsoft ResX Schema 
     
     Version 2.0
@@ -59,155 +59,170 @@
             : using a System.ComponentModel.TypeConverter
             : and then encoded with base64 encoding.
     -->
-	<xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
-		<xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
-		<xsd:element name="root" msdata:IsDataSet="true">
-			<xsd:complexType>
-				<xsd:choice maxOccurs="unbounded">
-					<xsd:element name="metadata">
-						<xsd:complexType>
-							<xsd:sequence>
-								<xsd:element name="value" type="xsd:string" minOccurs="0" />
-							</xsd:sequence>
-							<xsd:attribute name="name" use="required" type="xsd:string" />
-							<xsd:attribute name="type" type="xsd:string" />
-							<xsd:attribute name="mimetype" type="xsd:string" />
-							<xsd:attribute ref="xml:space" />
-						</xsd:complexType>
-					</xsd:element>
-					<xsd:element name="assembly">
-						<xsd:complexType>
-							<xsd:attribute name="alias" type="xsd:string" />
-							<xsd:attribute name="name" type="xsd:string" />
-						</xsd:complexType>
-					</xsd:element>
-					<xsd:element name="data">
-						<xsd:complexType>
-							<xsd:sequence>
-								<xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
-								<xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
-							</xsd:sequence>
-							<xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
-							<xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
-							<xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
-							<xsd:attribute ref="xml:space" />
-						</xsd:complexType>
-					</xsd:element>
-					<xsd:element name="resheader">
-						<xsd:complexType>
-							<xsd:sequence>
-								<xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
-							</xsd:sequence>
-							<xsd:attribute name="name" type="xsd:string" use="required" />
-						</xsd:complexType>
-					</xsd:element>
-				</xsd:choice>
-			</xsd:complexType>
-		</xsd:element>
-	</xsd:schema>
-	<resheader name="resmimetype">
-		<value>text/microsoft-resx</value>
-	</resheader>
-	<resheader name="version">
-		<value>2.0</value>
-	</resheader>
-	<resheader name="reader">
-		<value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-	</resheader>
-	<resheader name="writer">
-		<value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-	</resheader>
-	<data name="InvalidEmailPassword" xml:space="preserve">
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="InvalidEmailPassword" xml:space="preserve">
     <value>Invalid email/password</value>
   </data>
-	<data name="UserNotFound" xml:space="preserve">
+  <data name="UserNotFound" xml:space="preserve">
     <value>User not found</value>
   </data>
-	<data name="UserPasswordNotSet" xml:space="preserve">
+  <data name="UserPasswordNotSet" xml:space="preserve">
     <value>User password not set. Complete Sign-up process.</value>
   </data>
-	<data name="UserAccountDisabled" xml:space="preserve">
+  <data name="UserAccountDisabled" xml:space="preserve">
     <value>User account disabled</value>
   </data>
-	<data name="EmailNotConfirmed" xml:space="preserve">
+  <data name="EmailNotConfirmed" xml:space="preserve">
     <value>Email not confirm</value>
   </data>
-	<data name="InvalidUsernamePassword" xml:space="preserve">
+  <data name="InvalidUsernamePassword" xml:space="preserve">
     <value>Invalid username/password</value>
   </data>
-	<data name="EmailAlreadyRegistered" xml:space="preserve">
+  <data name="EmailAlreadyRegistered" xml:space="preserve">
     <value>Email address is already registered.</value>
   </data>
-	<data name="OtpSentSuccessfully" xml:space="preserve">
+  <data name="OtpSentSuccessfully" xml:space="preserve">
     <value>OTP sent successfully.</value>
   </data>
-	<data name="OtpVerifiedSuccessfully" xml:space="preserve">
+  <data name="OtpVerifiedSuccessfully" xml:space="preserve">
     <value>OTP verified successfully.</value>
   </data>
-	<data name="InvalidUserEmail" xml:space="preserve">
+  <data name="InvalidUserEmail" xml:space="preserve">
     <value>Invalid user email</value>
   </data>
-	<data name="InvalidOtp" xml:space="preserve">
+  <data name="InvalidOtp" xml:space="preserve">
     <value>Invalid OTP. Please try again.</value>
   </data>
-	<data name="OtpExpired" xml:space="preserve">
+  <data name="OtpExpired" xml:space="preserve">
     <value>OTP expired. Request a new one.</value>
   </data>
-	<data name="AccountDoesNotExist" xml:space="preserve">
+  <data name="AccountDoesNotExist" xml:space="preserve">
     <value>Account does not exist.</value>
   </data>
-	<data name="InvalidCode" xml:space="preserve">
+  <data name="InvalidCode" xml:space="preserve">
     <value>Invalid code</value>
   </data>
-	<data name="CodeExpired" xml:space="preserve">
+  <data name="CodeExpired" xml:space="preserve">
     <value>Code has expired</value>
   </data>
-	<data name="ErrorCreatingUser" xml:space="preserve">
+  <data name="ErrorCreatingUser" xml:space="preserve">
     <value>Failed to create account. Please try again.</value>
   </data>
-	<data name="PasswordUpdated" xml:space="preserve">
+  <data name="PasswordUpdated" xml:space="preserve">
     <value>Password updated successfully.</value>
   </data>
-	<data name="DifferentNewPassword" xml:space="preserve">
+  <data name="DifferentNewPassword" xml:space="preserve">
     <value>New password must be different from the previous one. Please choose a new password.</value>
   </data>
-	<data name="AppleLoginNotVerified" xml:space="preserve">
+  <data name="AppleLoginNotVerified" xml:space="preserve">
     <value>Your Apple login could not be verified. Please try again.</value>
   </data>
-	<data name="GoogleLoginNotVerified" xml:space="preserve">
+  <data name="GoogleLoginNotVerified" xml:space="preserve">
     <value>Your Google login could not be verified. Please try again.</value>
   </data>
-	<data name="LinkedInLoginNotVerified" xml:space="preserve">
+  <data name="LinkedInLoginNotVerified" xml:space="preserve">
     <value>Your LinkedIn login could not be verified. Please try again.</value>
   </data>
-	<data name="AccountNotCreatedWithGoogle" xml:space="preserve">
+  <data name="AccountNotCreatedWithGoogle" xml:space="preserve">
     <value>We couldn't create your account with Google. Please contact support.</value>
   </data>
-	<data name="AccountNotCreatedWithLinkedIn" xml:space="preserve">
+  <data name="AccountNotCreatedWithLinkedIn" xml:space="preserve">
     <value>We couldn't create your account with LinkedIn. Please contact support.</value>
   </data>
-	<data name="AccountNotCreatedWithApple" xml:space="preserve">
+  <data name="AccountNotCreatedWithApple" xml:space="preserve">
     <value>We couldn't create your account with Apple. Please contact support.</value>
   </data>
-	<data name="Success" xml:space="preserve">
+  <data name="Success" xml:space="preserve">
     <value>Success</value>
   </data>
-	<data name="EmailValidated" xml:space="preserve">
+  <data name="EmailValidated" xml:space="preserve">
     <value>Email ID validated</value>
   </data>
-	<data name="CouldNotCreateAccount" xml:space="preserve">
+  <data name="CouldNotCreateAccount" xml:space="preserve">
     <value>Account could not be created.</value>
   </data>
-	<data name="LoginProviderNotAdded" xml:space="preserve">
+  <data name="LoginProviderNotAdded" xml:space="preserve">
     <value>Login provider could not be added.</value>
   </data>
-	<data name="ProfileCreatedSuccessfully" xml:space="preserve">
+  <data name="ProfileCreatedSuccessfully" xml:space="preserve">
     <value>Profile created Successfully</value>
   </data>
-	<data name="UserAlreadyRegisteredWithSocialLogin" xml:space="preserve">
+  <data name="UserAlreadyRegisteredWithSocialLogin" xml:space="preserve">
     <value>Account already exists. Please continue using your social login.</value>
   </data>
-	<data name="PasswordResetNotAvailableForSocialLogin" xml:space="preserve">
+  <data name="PasswordResetNotAvailableForSocialLogin" xml:space="preserve">
     <value>Password reset is not available for accounts created via social login. Please continue signing in using your social account.</value>
+  </data>
+  <data name="OperationCompletedSuccessfully" xml:space="preserve">
+    <value>La operación se completó con éxito.</value>
+  </data>
+  <data name="UnauthorizedAccess" xml:space="preserve">
+    <value>Acceso no autorizado.</value>
+  </data>
+  <data name="AccessForbidden" xml:space="preserve">
+    <value>Acceso prohibido.</value>
+  </data>
+  <data name="ResourceNotFound" xml:space="preserve">
+    <value>Recurso no encontrado.</value>
+  </data>
+  <data name="InternalServerErrorOccurred" xml:space="preserve">
+    <value>Se produjo un error interno del servidor.</value>
   </data>
 </root>

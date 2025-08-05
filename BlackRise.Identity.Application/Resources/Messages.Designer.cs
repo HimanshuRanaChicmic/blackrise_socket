@@ -61,6 +61,15 @@ namespace BlackRise.Identity.Application.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Access forbidden.
+        /// </summary>
+        internal static string AccessForbidden {
+            get {
+                return ResourceManager.GetString("AccessForbidden", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Account does not exist..
         /// </summary>
         internal static string AccountDoesNotExist {
@@ -178,6 +187,15 @@ namespace BlackRise.Identity.Application.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to An internal server error occurred.
+        /// </summary>
+        internal static string InternalServerErrorOccurred {
+            get {
+                return ResourceManager.GetString("InternalServerErrorOccurred", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Invalid code.
         /// </summary>
         internal static string InvalidCode {
@@ -241,6 +259,15 @@ namespace BlackRise.Identity.Application.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Operation completed successfully.
+        /// </summary>
+        internal static string OperationCompletedSuccessfully {
+            get {
+                return ResourceManager.GetString("OperationCompletedSuccessfully", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to OTP expired. Request a new one..
         /// </summary>
         internal static string OtpExpired {
@@ -295,11 +322,29 @@ namespace BlackRise.Identity.Application.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Resource not found.
+        /// </summary>
+        internal static string ResourceNotFound {
+            get {
+                return ResourceManager.GetString("ResourceNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Success.
         /// </summary>
         internal static string Success {
             get {
                 return ResourceManager.GetString("Success", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unauthorized access.
+        /// </summary>
+        internal static string UnauthorizedAccess {
+            get {
+                return ResourceManager.GetString("UnauthorizedAccess", resourceCulture);
             }
         }
         

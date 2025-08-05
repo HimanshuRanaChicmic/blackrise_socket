@@ -200,10 +200,17 @@ public class AuthService : IAuthService
         if (existingUser == null)
             throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.InvalidUserEmail));
 
+        if (!existingUser.IsResetCodeConfirmed)
+            throw new UnAuthorizedException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.EmailNotConfirmed));
+
+        if (DateTime.UtcNow > existingUser.LastResetCodeConfirmTime?.AddHours(1))
+            throw new UnAuthorizedException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.SessionExpiredPleaseTryAgain));
+
         PasswordHasher<ApplicationUser> passwordHasher = new();
 
         existingUser.PasswordHash = passwordHasher.HashPassword(existingUser, password);
 
+        existingUser.IsResetCodeConfirmed = false;
         var result = await _userManager.UpdateAsync(existingUser);
 
         if (!result.Succeeded)
@@ -340,13 +347,24 @@ public class AuthService : IAuthService
             throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.InvalidUserEmail));
 
         if (existingUser.ResetPasswordCode != code)
+        {
+            existingUser.IsResetCodeConfirmed = false;
+            await _userManager.UpdateAsync(existingUser);
             throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.InvalidOtp));
+        }
 
         if (existingUser.ResetPasswordCodeExpiry < DateTime.UtcNow)
+        {
+            existingUser.IsResetCodeConfirmed = false;
+            await _userManager.UpdateAsync(existingUser);
             throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.OtpExpired));
+        }
 
         existingUser.ResetPasswordCode = null;
         existingUser.ResetPasswordCodeExpiry = null;
+        existingUser.LastResetCodeConfirmTime = DateTime.UtcNow;
+        existingUser.IsResetCodeConfirmed = true;
+
         var result = await _userManager.UpdateAsync(existingUser);
 
         if (!result.Succeeded)
@@ -363,6 +381,13 @@ public class AuthService : IAuthService
         if (existingUser == null || existingUser.IsDeleted)
             throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.InvalidUserEmail));
 
+        if(!existingUser.IsResetCodeConfirmed)
+            throw new UnAuthorizedException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.EmailNotConfirmed));
+
+        if (DateTime.UtcNow > existingUser.LastResetCodeConfirmTime?.AddHours(1))
+            throw new UnAuthorizedException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.SessionExpiredPleaseTryAgain));
+
+
         var token = await _userManager.GeneratePasswordResetTokenAsync(existingUser);
 
         // Ensure new password is not the same as the old one
@@ -371,7 +396,7 @@ public class AuthService : IAuthService
         {
             throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.DifferentNewPassword));
         }
-
+        existingUser.IsResetCodeConfirmed = false;
         var resetPasswordResult = await _userManager.ResetPasswordAsync(existingUser, token, password);
 
         if (!resetPasswordResult.Succeeded)
