@@ -44,6 +44,7 @@ namespace BlackRise.Identity.Application.Utils
         public const string ResourceNotFound = "Resource not found";
         public const string InternalServerErrorOccurred = "An internal server error occurred";
         public const string SessionExpiredPleaseTryAgain = "Session expired! Please try again.";
+        public const string PleaseConfirmYourEmailFirst = "Please confirm your email first.";
 
     }
 }

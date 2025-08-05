@@ -225,4 +225,7 @@
   <data name="InternalServerErrorOccurred" xml:space="preserve">
     <value>Se produjo un error interno del servidor.</value>
   </data>
+  <data name="PleaseConfirmYourEmailFirst" xml:space="preserve">
+    <value>Por favor, confirma primero tu correo electrónico.</value>
+  </data>
 </root>

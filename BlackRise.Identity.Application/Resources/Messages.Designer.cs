@@ -313,6 +313,15 @@ namespace BlackRise.Identity.Application.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Please confirm your email first..
+        /// </summary>
+        internal static string PleaseConfirmYourEmailFirst {
+            get {
+                return ResourceManager.GetString("PleaseConfirmYourEmailFirst", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Profile created Successfully.
         /// </summary>
         internal static string ProfileCreatedSuccessfully {

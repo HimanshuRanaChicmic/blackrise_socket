@@ -3,12 +3,12 @@ using BlackRise.Identity.Application.DataTransferObject;
 using BlackRise.Identity.Application.Exceptions;
 using BlackRise.Identity.Application.Feature.Login;
 using BlackRise.Identity.Application.Feature.Signup.Commands;
+using BlackRise.Identity.Application.Helpers;
 using BlackRise.Identity.Application.Settings;
+using BlackRise.Identity.Application.Utils;
 using BlackRise.Identity.Domain;
 using BlackRise.Identity.Domain.Common.Enums;
 using BlackRise.Identity.Persistence.Settings;
-using BlackRise.Identity.Application.Utils;
-using Google.Apis.Auth;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -22,7 +22,6 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using BlackRise.Identity.Application.Helpers;
 
 namespace BlackRise.Identity.Persistence.Services;
 
@@ -201,7 +200,7 @@ public class AuthService : IAuthService
             throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.InvalidUserEmail));
 
         if (!existingUser.IsResetCodeConfirmed)
-            throw new UnAuthorizedException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.EmailNotConfirmed));
+            throw new UnAuthorizedException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.PleaseConfirmYourEmailFirst));
 
         if (DateTime.UtcNow > existingUser.LastResetCodeConfirmTime?.AddHours(1))
             throw new UnAuthorizedException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.SessionExpiredPleaseTryAgain));
@@ -382,7 +381,7 @@ public class AuthService : IAuthService
             throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.InvalidUserEmail));
 
         if(!existingUser.IsResetCodeConfirmed)
-            throw new UnAuthorizedException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.EmailNotConfirmed));
+            throw new UnAuthorizedException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.PleaseConfirmYourEmailFirst));
 
         if (DateTime.UtcNow > existingUser.LastResetCodeConfirmTime?.AddHours(1))
             throw new UnAuthorizedException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.SessionExpiredPleaseTryAgain));
