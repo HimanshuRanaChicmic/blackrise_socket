@@ -72,11 +72,11 @@ namespace BlackRise.Identity.Persistence.Migrations
                             Id = new Guid("c8347abf-f51e-4dda-ba8d-2b3393a4aa63"),
                             ConcurrencyStamp = "ff3ef92a-9757-468c-a3ec-00a14209fb2c",
                             CreatedBy = new Guid("912c3a8a-d59d-4b7d-876a-3dd93a21c461"),
-                            CreatedDate = new DateTime(2025, 7, 10, 10, 8, 57, 887, DateTimeKind.Utc).AddTicks(9542),
+                            CreatedDate = new DateTime(2025, 7, 28, 12, 30, 11, 465, DateTimeKind.Utc).AddTicks(8680),
                             IsActive = true,
                             IsDeleted = false,
                             ModifiedBy = new Guid("912c3a8a-d59d-4b7d-876a-3dd93a21c461"),
-                            ModifiedDate = new DateTime(2025, 7, 10, 10, 8, 57, 887, DateTimeKind.Utc).AddTicks(9543),
+                            ModifiedDate = new DateTime(2025, 7, 28, 12, 30, 11, 465, DateTimeKind.Utc).AddTicks(8681),
                             Name = "SuperAdmin",
                             NormalizedName = "SUPERADMIN"
                         },
@@ -85,11 +85,11 @@ namespace BlackRise.Identity.Persistence.Migrations
                             Id = new Guid("4a9d216c-4f7f-429d-9a28-a084526ce818"),
                             ConcurrencyStamp = "65b48457-7e70-4361-8cc0-7e7c46bc9dac",
                             CreatedBy = new Guid("912c3a8a-d59d-4b7d-876a-3dd93a21c461"),
-                            CreatedDate = new DateTime(2025, 7, 10, 10, 8, 57, 887, DateTimeKind.Utc).AddTicks(9547),
+                            CreatedDate = new DateTime(2025, 7, 28, 12, 30, 11, 465, DateTimeKind.Utc).AddTicks(8685),
                             IsActive = true,
                             IsDeleted = false,
                             ModifiedBy = new Guid("912c3a8a-d59d-4b7d-876a-3dd93a21c461"),
-                            ModifiedDate = new DateTime(2025, 7, 10, 10, 8, 57, 887, DateTimeKind.Utc).AddTicks(9548),
+                            ModifiedDate = new DateTime(2025, 7, 28, 12, 30, 11, 465, DateTimeKind.Utc).AddTicks(8686),
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         },
@@ -98,11 +98,11 @@ namespace BlackRise.Identity.Persistence.Migrations
                             Id = new Guid("920c0369-9b15-493d-b576-d806a271f748"),
                             ConcurrencyStamp = "02722f18-b994-445e-9cb4-37197481e878",
                             CreatedBy = new Guid("912c3a8a-d59d-4b7d-876a-3dd93a21c461"),
-                            CreatedDate = new DateTime(2025, 7, 10, 10, 8, 57, 887, DateTimeKind.Utc).AddTicks(9551),
+                            CreatedDate = new DateTime(2025, 7, 28, 12, 30, 11, 465, DateTimeKind.Utc).AddTicks(8690),
                             IsActive = true,
                             IsDeleted = false,
                             ModifiedBy = new Guid("912c3a8a-d59d-4b7d-876a-3dd93a21c461"),
-                            ModifiedDate = new DateTime(2025, 7, 10, 10, 8, 57, 887, DateTimeKind.Utc).AddTicks(9552),
+                            ModifiedDate = new DateTime(2025, 7, 28, 12, 30, 11, 465, DateTimeKind.Utc).AddTicks(8691),
                             Name = "User",
                             NormalizedName = "USER"
                         });
@@ -198,11 +198,20 @@ namespace BlackRise.Identity.Persistence.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsProfileCompleted")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsProfileCreated")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsResetCodeConfirmed")
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsSocialLogin")
                         .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastResetCodeConfirmTime")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("boolean");
@@ -270,19 +279,21 @@ namespace BlackRise.Identity.Persistence.Migrations
                             AccessFailedCount = 0,
                             ConcurrencyStamp = "231d6055-699c-4e30-acdd-7e270ae493ac",
                             CreatedBy = new Guid("912c3a8a-d59d-4b7d-876a-3dd93a21c461"),
-                            CreatedDate = new DateTime(2025, 7, 10, 10, 8, 57, 888, DateTimeKind.Utc).AddTicks(999),
+                            CreatedDate = new DateTime(2025, 7, 28, 12, 30, 11, 466, DateTimeKind.Utc).AddTicks(95),
                             Email = "super-admin@blackrise.com",
                             EmailConfirmed = true,
                             IsActive = true,
                             IsDeleted = false,
+                            IsProfileCompleted = false,
                             IsProfileCreated = false,
+                            IsResetCodeConfirmed = false,
                             IsSocialLogin = false,
                             LockoutEnabled = false,
                             ModifiedBy = new Guid("912c3a8a-d59d-4b7d-876a-3dd93a21c461"),
-                            ModifiedDate = new DateTime(2025, 7, 10, 10, 8, 57, 888, DateTimeKind.Utc).AddTicks(1000),
+                            ModifiedDate = new DateTime(2025, 7, 28, 12, 30, 11, 466, DateTimeKind.Utc).AddTicks(97),
                             NormalizedEmail = "SUPER-ADMIN@BLACKRISE.COM",
                             NormalizedUserName = "SUPER-ADMIN@BLACKRISE.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAEKXicol8fwCGM3eg1yzo2OHMjQxjc//+3bRfgpkqWW2arum2qRH2WiawLQ+ls7VUZw==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEGhACgv2S6zHSw4oXYnIWIntq2dFRt/dboVf6cAtjnw3dSK/u3V6yrsTIGnl4s6KsQ==",
                             PhoneNumberConfirmed = false,
                             SecurityStamp = "b43e9e94-17a5-4f93-bb9f-2ebbf412187a",
                             TwoFactorEnabled = false,
@@ -294,19 +305,21 @@ namespace BlackRise.Identity.Persistence.Migrations
                             AccessFailedCount = 0,
                             ConcurrencyStamp = "231d6055-699c-4e30-acdd-7e270ae493ac",
                             CreatedBy = new Guid("a901293b-f4cd-4b50-93da-158bc435c1f9"),
-                            CreatedDate = new DateTime(2025, 7, 10, 10, 8, 57, 932, DateTimeKind.Utc).AddTicks(976),
+                            CreatedDate = new DateTime(2025, 7, 28, 12, 30, 11, 501, DateTimeKind.Utc).AddTicks(7356),
                             Email = "admin@blackrise.com",
                             EmailConfirmed = true,
                             IsActive = true,
                             IsDeleted = false,
+                            IsProfileCompleted = false,
                             IsProfileCreated = false,
+                            IsResetCodeConfirmed = false,
                             IsSocialLogin = false,
                             LockoutEnabled = false,
                             ModifiedBy = new Guid("8494a3ad-b74b-4407-a9ff-7a3f0c17770d"),
-                            ModifiedDate = new DateTime(2025, 7, 10, 10, 8, 57, 932, DateTimeKind.Utc).AddTicks(977),
+                            ModifiedDate = new DateTime(2025, 7, 28, 12, 30, 11, 501, DateTimeKind.Utc).AddTicks(7358),
                             NormalizedEmail = "ADMIN@BLACKRISE.COM",
                             NormalizedUserName = "ADMIN@BLACKRISE.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAENvjHLdpI8tGD7M0VeULj98RoR1ha6NAADdi8bZok/inHyYLauJ2kyuQxaCdHQu5tQ==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEPNHc4l7YNYkWEqPQPD3m116p+RefdEhNYYhWv2529kUq3iXX123IHviW3O5IHyCag==",
                             PhoneNumberConfirmed = false,
                             SecurityStamp = "b43e9e94-17a5-4f93-bb9f-2ebbf412187a",
                             TwoFactorEnabled = false,
@@ -318,19 +331,21 @@ namespace BlackRise.Identity.Persistence.Migrations
                             AccessFailedCount = 0,
                             ConcurrencyStamp = "8c349594-2eb1-4b0b-9ff5-b8d473013cb9",
                             CreatedBy = new Guid("a901293b-f4cd-4b50-93da-158bc435c1f9"),
-                            CreatedDate = new DateTime(2025, 7, 10, 10, 8, 57, 974, DateTimeKind.Utc).AddTicks(8858),
+                            CreatedDate = new DateTime(2025, 7, 28, 12, 30, 11, 537, DateTimeKind.Utc).AddTicks(4832),
                             Email = "user@blackrise.com",
                             EmailConfirmed = true,
                             IsActive = true,
                             IsDeleted = false,
+                            IsProfileCompleted = false,
                             IsProfileCreated = false,
+                            IsResetCodeConfirmed = false,
                             IsSocialLogin = false,
                             LockoutEnabled = false,
                             ModifiedBy = new Guid("8494a3ad-b74b-4407-a9ff-7a3f0c17770d"),
-                            ModifiedDate = new DateTime(2025, 7, 10, 10, 8, 57, 974, DateTimeKind.Utc).AddTicks(8860),
+                            ModifiedDate = new DateTime(2025, 7, 28, 12, 30, 11, 537, DateTimeKind.Utc).AddTicks(4833),
                             NormalizedEmail = "USER@BLACKRISE.COM",
                             NormalizedUserName = "USER@BLACKRISE.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAEKl2KvFyhuiau/kMnmzKO80juzWoLSkK9QN5E3JiStSULiAOaBjMALczWMFcfC252Q==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEKyVg/oZ7anywXIPMFbwixQG0jxisgBN09kyhtX3DzDCiOB2cCceUnR1ODk5tuB+9A==",
                             PhoneNumberConfirmed = false,
                             SecurityStamp = "b98e9771-fb3c-4182-91d9-d7d3ebfd8959",
                             TwoFactorEnabled = false,

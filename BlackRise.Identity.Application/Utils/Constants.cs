@@ -43,5 +43,7 @@ namespace BlackRise.Identity.Application.Utils
         public const string AccessForbidden = "Access forbidden";
         public const string ResourceNotFound = "Resource not found";
         public const string InternalServerErrorOccurred = "An internal server error occurred";
+        public const string SessionExpiredPleaseTryAgain = "Session expired! Please try again.";
+
     }
 }

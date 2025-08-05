@@ -9,6 +9,8 @@ public class ApplicationUser : IdentityUser<Guid>
 
     public string? ResetPasswordCode { get; set; }
     public DateTime? ResetPasswordCodeExpiry { get; set; }
+    public DateTime? LastResetCodeConfirmTime { get; set; }
+    public bool IsResetCodeConfirmed { get; set; }
 
     public Guid CreatedBy { get; set; }
     public DateTime CreatedDate { get; set; }
