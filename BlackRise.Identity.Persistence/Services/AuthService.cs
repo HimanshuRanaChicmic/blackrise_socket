@@ -137,6 +137,14 @@ public class AuthService : IAuthService
         var existingUser = await _userManager.FindByEmailAsync(signupCommand.Email);
         var otp = "";
 
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        int age = CalculateAge(signupCommand.DateOfBirth, today);
+
+        if (age < 16)
+        {
+            throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.MustBe16YearsOld));
+        }
+
         if (existingUser != null && existingUser.IsSocialLogin)
             throw new BadRequestException(LocalizationHelper.GetLocalizedMessageFromConstantValue(Constants.UserAlreadyRegisteredWithSocialLogin));
 
@@ -726,5 +734,14 @@ public class AuthService : IAuthService
         rsa.ImportParameters(rsaParameters);
 
         return new RsaSecurityKey(rsa) { KeyId = kid };
+    }
+    private static int CalculateAge(DateOnly birthDate, DateOnly today)
+    {
+        int age = today.Year - birthDate.Year;
+        if (birthDate > today.AddYears(-age))
+        {
+            age--;
+        }
+        return age;
     }
 }

@@ -120,4 +120,7 @@
   <data name="PleaseConfirmYourEmailFirst" xml:space="preserve">
     <value />
   </data>
+  <data name="MustBe16YearsOld" xml:space="preserve">
+    <value />
+  </data>
 </root>
