@@ -259,6 +259,15 @@ namespace BlackRise.Identity.Application.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to You must be at least 16 years old to sign up..
+        /// </summary>
+        internal static string MustBe16YearsOld {
+            get {
+                return ResourceManager.GetString("MustBe16YearsOld", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Operation completed successfully.
         /// </summary>
         internal static string OperationCompletedSuccessfully {

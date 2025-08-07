@@ -228,4 +228,7 @@
   <data name="PleaseConfirmYourEmailFirst" xml:space="preserve">
     <value>Veuillez d'abord confirmer votre adresse e-mail.</value>
   </data>
+  <data name="MustBe16YearsOld" xml:space="preserve">
+    <value>Vous devez avoir au moins 16 ans pour vous inscrire.</value>
+  </data>
 </root>

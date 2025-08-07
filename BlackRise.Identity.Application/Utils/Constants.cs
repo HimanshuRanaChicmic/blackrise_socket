@@ -45,6 +45,6 @@ namespace BlackRise.Identity.Application.Utils
         public const string InternalServerErrorOccurred = "An internal server error occurred";
         public const string SessionExpiredPleaseTryAgain = "Session expired! Please try again.";
         public const string PleaseConfirmYourEmailFirst = "Please confirm your email first.";
-
+        public const string MustBe16YearsOld = "You must be at least 16 years old to sign up.";
     }
 }
