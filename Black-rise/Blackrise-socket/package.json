@@ -1,0 +1,49 @@
+{
+    "name": "auction_socket_backend",
+    "version": "1.0.0",
+    "description": "Node.js Application",
+    "main": "server.js",
+    "scripts": {
+        "start": "node server"
+    },
+    "repository": {
+        "type": "git",
+        "url": ""
+    },
+    "author": "Chicmic",
+    "license": "ISC",
+    "dependencies": {
+        "@socket.io/redis-adapter": "^7.2.0",
+        "@solana/spl-token": "^0.4.1",
+        "@solana/web3.js": "^1.91.1",
+        "async-lock": "^1.4.1",
+        "aws-sdk": "^2.537.0",
+        "axios": "^1.6.8",
+        "bcrypt": "^5.0.1",
+        "cors": "^2.8.5",
+        "dotenv": "^8.6.0",
+        "ethers": "^5.6.8",
+        "etherscan-api": "^10.3.0",
+        "express": "^4.16.4",
+        "express-basic-auth": "^1.2.0",
+        "handlebars": "^4.7.7",
+        "joi": "^17.5.0",
+        "joi-to-swagger": "^5.2.0",
+        "jsonwebtoken": "^8.4.0",
+        "madge": "^5.0.1",
+        "moment-timezone": "^0.5.33",
+        "multer": "^1.4.2",
+        "node-cron": "^3.0.0",
+        "nodemailer": "^6.6.1",
+        "pino": "^7.6.5",
+        "pino-logflare": "^0.3.12",
+        "redis": "^4.1.0",
+        "socket.io": "^4.4.1",
+        "socket.io-p2p-server": "^1.2.0",
+        "swagger-ui-express": "^4.0.1",
+        "web3": "^1.7.4"
+    },
+    "devDependencies": {
+        "eslint": "^8.57.0"
+    }
+}
